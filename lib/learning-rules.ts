@@ -525,6 +525,14 @@ export function applyAction(state: AssemblyState, action: Action): Result {
     message: `${p.name}：${{ install: '已正确就位', remove: '已放回托盘', fasten: '固定完成', loosen: '固定件已松开', lock: '锁扣已合上', unlock: '锁扣已打开', connect: '连接正确', disconnect: '已断开连接' }[action.type]}。`,
   };
 }
+/** 只读预检与实际操作使用同一判定，预检结果不写回状态。 */
+export function probeAction(
+  state: AssemblyState,
+  action: Action,
+): Pick<Result, 'ok' | 'message'> {
+  const { ok, message } = applyAction(state, action);
+  return { ok, message };
+}
 export function partComplete(state: AssemblyState, p: Part) {
   const v = state.parts[p.id];
   return (

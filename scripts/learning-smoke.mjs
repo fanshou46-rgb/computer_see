@@ -142,6 +142,7 @@ try {
       report.checks.push('拆装中刷新恢复');
       // 使用实际鼠标从托盘模型拖到安装位置，而非调用操作规则。
       await click(page.locator('.part-tray [data-part="ram"]'));
+      await click(button('拖动零件'));
       await ready();
       const points = await page
         .locator('.lab-canvas')

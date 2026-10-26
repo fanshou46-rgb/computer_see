@@ -1,19 +1,30 @@
 import { useEffect, useRef, useState } from 'react';
-import { LoaderCircle, Maximize2, RotateCcw } from 'lucide-react';
-import type { Action, AssemblyState } from '@/lib/learning-rules';
+import {
+  LoaderCircle,
+  Maximize2,
+  RotateCcw,
+  Hand,
+  MousePointer2,
+} from 'lucide-react';
+import type { Action, AssemblyState, Result } from '@/lib/learning-rules';
+import type { CameraView, InteractionMode } from '@/lib/learning-interaction';
 import type { LearningScene } from '@/lib/learning-scene';
 type Props = {
+  practice: boolean;
+  interaction: InteractionMode;
+  onInteractionChange: (mode: InteractionMode) => void;
   state: AssemblyState;
   selected: string;
   expanded: boolean;
   quality: string;
   demo: string | null;
   onPick: (id: string) => void;
-  onAction: (action: Action) => void;
+  onAction: (action: Action) => Result;
   onMessage: (message: string) => void;
 };
 export default function LearningCanvas(props: Props) {
   const host = useRef<HTMLDivElement>(null),
+    viewMenu = useRef<HTMLSelectElement>(null),
     engine = useRef<LearningScene | null>(null),
     current = useRef(props);
   const [readyMachine, setReadyMachine] = useState<string | null>(null),
@@ -27,6 +38,7 @@ export default function LearningCanvas(props: Props) {
       props.expanded,
       props.demo,
       props.quality,
+      props.interaction,
     );
   }, [props]);
   useEffect(() => {
@@ -52,6 +64,7 @@ export default function LearningCanvas(props: Props) {
           current.current.expanded,
           current.current.demo,
           current.current.quality,
+          current.current.interaction,
         );
       })
       .catch(() => setError('3D 场景加载失败，请刷新重试。'));
@@ -85,18 +98,63 @@ export default function LearningCanvas(props: Props) {
           <button onClick={() => location.reload()}>重新加载</button>
         </div>
       )}
+      <fieldset className="lab-tools" aria-label="工作台工具">
+        {props.practice ? (
+          <>
+            <button
+              aria-pressed={props.interaction === 'inspect'}
+              onClick={() => props.onInteractionChange('inspect')}
+            >
+              <MousePointer2 size={13} />
+              旋转观察
+            </button>
+            <button
+              aria-pressed={props.interaction === 'manipulate'}
+              disabled={!!props.demo}
+              onClick={() => props.onInteractionChange('manipulate')}
+            >
+              <Hand size={13} />
+              拖动零件
+            </button>
+          </>
+        ) : (
+          <span>观察工具 · 单击选择，拖动旋转</span>
+        )}
+      </fieldset>
+      <output className="lab-drag-feedback" aria-live="polite" />
       <div className="lab-camera">
+        <select
+          key={props.state.machine}
+          ref={viewMenu}
+          aria-label="观察视角"
+          defaultValue="default"
+          onChange={(e) => {
+            engine.current?.setView(e.target.value as CameraView);
+          }}
+        >
+          <option value="default">视角 · 默认</option>
+          <option value="front">正面</option>
+          <option value="back">背面</option>
+          <option value="top">顶部</option>
+          <option value="bottom">底部</option>
+        </select>
         <button
           title="聚焦选中部件"
           aria-label="聚焦选中部件"
-          onClick={() => engine.current?.focus(props.selected)}
+          onClick={() => {
+            engine.current?.focus(props.selected);
+            if (viewMenu.current) viewMenu.current.value = 'default';
+          }}
         >
           <Maximize2 size={16} />
         </button>
         <button
-          title="复位视角"
+          title="恢复全景"
           aria-label="复位视角"
-          onClick={() => engine.current?.resetCamera()}
+          onClick={() => {
+            engine.current?.resetCamera();
+            if (viewMenu.current) viewMenu.current.value = 'default';
+          }}
         >
           <RotateCcw size={16} />
         </button>

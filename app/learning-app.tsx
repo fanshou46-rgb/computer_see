@@ -32,6 +32,7 @@ import {
   Zap,
 } from 'lucide-react';
 import LearningCanvas from './learning-canvas';
+import type { InteractionMode } from '@/lib/learning-interaction';
 import {
   lessons,
   observationAssembly,
@@ -51,6 +52,7 @@ import {
   type AssemblyState,
   type Machine,
   type Operation,
+  type Result,
 } from '@/lib/learning-rules';
 import {
   freshProgress,
@@ -95,6 +97,7 @@ export default function LearningApp() {
   const [selected, setSelected] = useState('board'),
     [expanded, setExpanded] = useState(false),
     [quality, setQuality] = useState('standard');
+  const [interaction, setInteraction] = useState<InteractionMode>('inspect');
   const [notice, setNotice] = useState(
       initial.recovered ? '已恢复可读取的学习进度，当前场景已安全重置。' : '',
     ),
@@ -171,6 +174,7 @@ export default function LearningApp() {
   );
   const notify = (message: string) => setNotice(message);
   function clearTransient() {
+    setInteraction('inspect');
     setHint(0);
     setChoice(null);
     setAnswered(false);
@@ -245,16 +249,20 @@ export default function LearningApp() {
         );
     }
   }
-  function perform(action: Action) {
-    if (demo) return;
+  function perform(action: Action): Result {
+    if (demo) return { ok: false, state, message: '示范结束后再操作。' };
     if (mode !== 'learn' || progress.step !== 'practice') {
       onPick(action.part);
       setNotice('当前为观察模式。进入动手练习后，操作才会计入关卡。');
-      return;
+      return {
+        ok: false,
+        state,
+        message: '当前为观察模式。进入动手练习后再操作。',
+      };
     }
     const result = applyAction(state, action);
     setNotice(result.message);
-    if (!result.ok) return;
+    if (!result.ok) return result;
     setHistory((h) => [
       ...h.slice(-29),
       { assembly: structuredClone(state), removed: [...progress.removed] },
@@ -267,6 +275,7 @@ export default function LearningApp() {
         : p.removed,
     }));
     setBoot('off');
+    return result;
   }
   function undo() {
     const previous = history.at(-1);
@@ -409,6 +418,7 @@ export default function LearningApp() {
     setProgress((p) => ({ ...p, assembly: rotated }));
   }
   const changeMode = (next: typeof mode) => {
+    setInteraction('inspect');
     if (next !== 'explore') historyReplace();
     setMode(next);
     setDemo(null);
@@ -639,6 +649,7 @@ export default function LearningApp() {
                       className={libraryMachine === 'desktop' ? 'active' : ''}
                       onClick={() => {
                         setLibraryMachine('desktop');
+                        setInteraction('inspect');
                         setSelected('board');
                       }}
                     >
@@ -648,6 +659,7 @@ export default function LearningApp() {
                       className={libraryMachine === 'laptop' ? 'active' : ''}
                       onClick={() => {
                         setLibraryMachine('laptop');
+                        setInteraction('inspect');
                         setSelected('board');
                       }}
                     >
@@ -657,6 +669,13 @@ export default function LearningApp() {
                 )}
                 <div className="scene-wrap">
                   <LearningCanvas
+                    practice={mode === 'learn' && progress.step === 'practice'}
+                    interaction={
+                      mode === 'learn' && progress.step === 'practice' && !demo
+                        ? interaction
+                        : 'inspect'
+                    }
+                    onInteractionChange={setInteraction}
                     state={canvasState}
                     selected={part.id}
                     expanded={expanded}
@@ -670,8 +689,8 @@ export default function LearningApp() {
                   <div className="scene-instructions">
                     <MousePointer2 size={13} />
                     {progress.step === 'practice' && mode === 'learn'
-                      ? '拖动零件靠近安装框 · 右侧也可点击操作'
-                      : '拖动空白旋转 · 滚轮缩放 · 点击部件查看'}
+                      ? '先选工具 · 拖动空白旋转 · 右侧也可点击操作'
+                      : '拖动模型或空白旋转 · 滚轮缩放 · 单击查看'}
                   </div>
                   {demo && (
                     <div className="demo-banner">

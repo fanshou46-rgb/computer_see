@@ -2,14 +2,30 @@ import * as T from 'three';
 import { buildModel, type Piece } from './models.ts';
 import { optimizeTeachingPanels } from './learning-panels.ts';
 import { disposeModelResources } from './model-stage.ts';
-import { createStageRuntime, createStageLoop } from './stage-runtime.ts';
+import {
+  createStageRuntime,
+  createStageLoop,
+  fitCameraToBounds,
+} from './stage-runtime.ts';
+import { scheduleRaycastAcceleration } from './raycast-acceleration.ts';
+import {
+  movedFrom,
+  groundOpacity,
+  removalAxis,
+  viewDirection,
+  inDropZone,
+  type InteractionMode,
+  type CameraView,
+} from './learning-interaction.ts';
 import { buildFan, buildScrew } from './parts.ts';
 import {
   partsFor,
   partFor,
+  probeAction,
   type AssemblyState,
   type Action,
   type Machine,
+  type Result,
 } from './learning-rules.ts';
 
 type Node = {
@@ -21,7 +37,7 @@ type Node = {
 };
 type Callbacks = {
   pick: (id: string) => void;
-  action: (action: Action) => void;
+  action: (action: Action) => Result;
   message: (text: string) => void;
   ready: () => void;
   error: (text: string) => void;
@@ -129,7 +145,8 @@ export function createLearningScene(
       if (['psucable', 'psushroud'].includes(p.concept))
         p.object.visible = false;
     model.root.traverse((o) => {
-      if (o.userData.powerFlow || o.userData.airflow) o.visible = false;
+      if (o.userData.powerFlow || o.userData.airflow || o.userData.contextFrame)
+        o.visible = false;
     });
     anchors.atx = anchors.atx24;
     anchors.eps = anchors.eps8;
@@ -347,61 +364,218 @@ export function createLearningScene(
       node.object.add(screw);
     }
   }
+  // 缓存部件包围盒与状态相关对象，旋转相机时不再反复遍历整棵模型。
+  root.updateMatrixWorld(true);
+  const structureBounds = new T.Box3();
+  root.traverseVisible((o) => {
+    if (!(o instanceof T.Mesh)) return;
+    if (o instanceof T.InstancedMesh) {
+      o.computeBoundingBox();
+      if (o.boundingBox)
+        structureBounds.union(
+          o.boundingBox.clone().applyMatrix4(o.matrixWorld),
+        );
+    } else {
+      o.geometry.computeBoundingBox();
+      if (o.geometry.boundingBox)
+        structureBounds.union(
+          o.geometry.boundingBox.clone().applyMatrix4(o.matrixWorld),
+        );
+    }
+  });
+  const localBounds = new Map<Node, T.Box3>();
+  const connectedObjects: { id: string; object: T.Object3D }[] = [];
+  const fasteners: { id: string; object: T.Object3D }[] = [];
+  for (const n of nodes) {
+    const first = nodes.find((other) => other.id === n.id)!;
+    n.tray.add(n.base.clone().sub(first.base));
+    localBounds.set(
+      n,
+      partFor(machine, n.id)?.kind === 'cable'
+        ? new T.Box3(
+            new T.Vector3(-0.45, -0.2, -0.2),
+            new T.Vector3(0.45, 0.2, 0.2),
+          )
+        : new T.Box3()
+            .setFromObject(n.object)
+            .applyMatrix4(n.object.matrixWorld.clone().invert()),
+    );
+    n.object.traverse((o) => {
+      if (o.userData.connectedOnly)
+        connectedObjects.push({ id: n.id, object: o });
+      if (o.userData.learningFastener) fasteners.push({ id: n.id, object: o });
+    });
+  }
+  const cancelAcceleration = scheduleRaycastAcceleration(root);
   const ground = box(60, 0.15, 45, '#e2e8df', 0.05);
   ground.position.y = machine === 'desktop' ? -7.05 : -0.65;
+  ground.material.transparent = true;
   ground.receiveShadow = true;
   scene.add(ground);
   const grid = new T.GridHelper(50, 50, '#bdcbc1', '#d4ddd3');
   grid.position.y = ground.position.y + 0.09;
+  grid.material.transparent = true;
   scene.add(grid);
-  const outline = new T.BoxHelper(root, 0xce6b43);
+  const outline = new T.Box3Helper(new T.Box3(), 0xce6b43);
   outline.visible = false;
   scene.add(outline);
-  const ghost = new T.Mesh(
-    new T.BoxGeometry(1, 1, 1),
-    new T.MeshBasicMaterial({
-      color: 0xc76a42,
-      wireframe: true,
-      transparent: true,
-      opacity: 0.65,
-      depthTest: false,
-    }),
-  );
+  const ghost = new T.Box3Helper(new T.Box3(), 0xc76a42);
+  const ghostMaterial = ghost.material as T.LineBasicMaterial;
+  ghostMaterial.transparent = true;
+  ghostMaterial.opacity = 0.85;
+  ghostMaterial.depthTest = false;
   ghost.renderOrder = 8;
   ghost.visible = false;
   scene.add(ghost);
+  const feedbackElement =
+    host.parentElement?.querySelector<HTMLElement>('.lab-drag-feedback');
+  function feedback(text: string, tone = 'hint') {
+    if (feedbackElement && feedbackElement.textContent !== text)
+      feedbackElement.textContent = text;
+    if (feedbackElement) feedbackElement.dataset.tone = tone;
+  }
+
   let current: AssemblyState | null = null,
     selected = 'board',
-    expanded = false,
-    demo: string | null = null,
-    disposed = false,
-    frameCount = 0;
+    expanded = false;
+  let interaction: InteractionMode = 'inspect',
+    demo: string | null = null;
+  let disposed = false,
+    frameCount = 0,
+    focused = false;
+  let preview: Pick<Result, 'ok' | 'message'> | null = null;
   const raycaster = new T.Raycaster(),
-    pointer = new T.Vector2(),
-    tmp = new T.Vector3();
-  let drag: {
-    id: string;
-    startX: number;
-    startY: number;
-    point: T.Vector3;
-    plane: T.Plane;
-    nodes: Node[];
-    moved: boolean;
-  } | null = null;
-  const target = (node: Node) => {
-    const v = current?.parts[node.id];
+    pointer = new T.Vector2();
+  const transform = new T.Matrix4();
+  const target = (n: Node) => {
+    const v = current?.parts[n.id];
     const seated =
       v &&
-      (partFor(machine, node.id)?.kind === 'cable' ? v.connected : v.installed);
-    if (!seated) return node.tray.clone();
-    return node.base
-      .clone()
-      .add(
-        expanded
-          ? new T.Vector3(0, 0, (nodes.indexOf(node) % 7) * 0.9)
-          : new T.Vector3(),
-      );
+      (partFor(machine, n.id)?.kind === 'cable' ? v.connected : v.installed);
+    return seated
+      ? n.base
+          .clone()
+          .add(
+            expanded
+              ? new T.Vector3(0, 0, (nodes.indexOf(n) % 7) * 0.9)
+              : new T.Vector3(),
+          )
+      : n.tray.clone();
   };
+  function boundsOf(n: Node, atBase = false) {
+    return localBounds
+      .get(n)!
+      .clone()
+      .applyMatrix4(
+        transform.compose(
+          atBase ? n.base : n.object.position,
+          atBase ? n.rotation : n.object.quaternion,
+          n.object.scale,
+        ),
+      );
+  }
+  function selectedBounds(atBase = false) {
+    const b = new T.Box3();
+    for (const n of nodes) if (n.id === selected) b.union(boundsOf(n, atBase));
+    return b;
+  }
+  function frameBounds() {
+    const b = structureBounds.clone();
+    for (const n of nodes)
+      if (n.object.visible) {
+        b.union(boundsOf(n));
+        if (!drag)
+          b.union(boundsOf(n).translate(target(n).sub(n.object.position)));
+      }
+    return b;
+  }
+  function screen(p: T.Vector3) {
+    const b = canvas.getBoundingClientRect(),
+      v = p.clone().project(camera);
+    return {
+      x: b.left + ((v.x + 1) * b.width) / 2,
+      y: b.top + ((1 - v.y) * b.height) / 2,
+    };
+  }
+  function screenBox(b: T.Box3) {
+    const result = {
+      left: Infinity,
+      top: Infinity,
+      right: -Infinity,
+      bottom: -Infinity,
+    };
+    for (const x of [b.min.x, b.max.x])
+      for (const y of [b.min.y, b.max.y])
+        for (const z of [b.min.z, b.max.z]) {
+          const p = screen(new T.Vector3(x, y, z));
+          result.left = Math.min(result.left, p.x);
+          result.right = Math.max(result.right, p.x);
+          result.top = Math.min(result.top, p.y);
+          result.bottom = Math.max(result.bottom, p.y);
+        }
+    return result;
+  }
+  type Press = {
+    pointerId: number;
+    id: string | null;
+    x: number;
+    y: number;
+    moved: boolean;
+  };
+  type Drag = {
+    pointerId: number;
+    id: string;
+    group: Node[];
+    starts: T.Vector3[];
+    rotations: T.Quaternion[];
+    grab: T.Vector3;
+    plane: T.Plane;
+    axis: T.Vector3;
+    installed: boolean;
+    moved: boolean;
+    near: boolean;
+    distance: number;
+    allowed: boolean;
+    reason: string;
+    axisUsable: boolean;
+    startX: number;
+    startY: number;
+    positions: T.Vector3[];
+  };
+  let press: Press | null = null,
+    drag: Drag | null = null;
+  const pointers = new Map<number, { x: number; y: number; type: string }>();
+  let forwarding = false;
+  function cancel(announce = false, preservePointers = false) {
+    const old = drag;
+    drag = null;
+    press = null;
+    controls.enabled = true;
+    if (!preservePointers) pointers.clear();
+    host.dataset.dragging = 'false';
+    if (old) {
+      old.group.forEach((n, i) => {
+        n.object.position.copy(old.starts[i]);
+        n.object.quaternion.copy(old.rotations[i]);
+      });
+      if (canvas.hasPointerCapture(old.pointerId))
+        canvas.releasePointerCapture(old.pointerId);
+      if (announce) feedback('已取消拖动，部件恢复原位。');
+    }
+    if (!disposed) loop.wake();
+  }
+  function refreshPreview() {
+    const v = current?.parts[selected],
+      p = partFor(machine, selected);
+    preview =
+      current && v && p?.kind !== 'cable'
+        ? probeAction(current, {
+            type: v.installed ? 'remove' : 'install',
+            part: selected,
+            rotation: v.rotation,
+          })
+        : null;
+  }
   function pose() {
     let unsettled = false;
     for (const latch of latches) {
@@ -417,59 +591,83 @@ export function createLearningScene(
       const seated =
         partFor(machine, n.id)?.kind === 'cable' ? v.connected : v.installed;
       n.object.visible = !!seated || selected === n.id || demo === n.id;
-      if (!drag?.nodes.includes(n)) n.object.position.lerp(target(n), 0.28);
-      const q = n.rotation.clone();
+      if (drag?.group.includes(n)) {
+        const index = drag.group.indexOf(n);
+        n.object.position.copy(drag.positions[index]);
+        continue;
+      }
+      const destination = target(n),
+        q = n.rotation.clone();
       if (!seated && v.rotation)
         q.multiply(
           new T.Quaternion().setFromAxisAngle(new T.Vector3(0, 1, 0), Math.PI),
         );
+      n.object.position.lerp(destination, 0.28);
       n.object.quaternion.slerp(q, 0.28);
       if (
         n.object.visible &&
-        (n.object.position.distanceToSquared(target(n)) > 0.0001 ||
+        (n.object.position.distanceToSquared(destination) > 0.0001 ||
           n.object.quaternion.angleTo(q) > 0.001)
       )
         unsettled = true;
-      n.object.traverse((o) => {
-        if (o.userData.connectedOnly) o.visible = v.connected;
-        if (o.userData.learningFastener) {
-          o.rotation.y = v.fixed ? 0 : Math.PI * 1.8;
-          o.scale.y = v.fixed ? 1 : 1.6;
-        }
-      });
     }
     const chosen = nodes.find((n) => n.id === selected && n.object.visible);
-    if (chosen) {
-      outline.setFromObject(chosen.object);
-      outline.visible = true;
-      const v = current?.parts[selected],
-        p = partFor(machine, selected);
-      ghost.visible = !!v && !(p?.kind === 'cable' ? v.connected : v.installed);
-      if (ghost.visible) {
-        ghost.position.copy(chosen.base);
-        ghost.scale.set(
-          p?.kind === 'cable' ? 0.85 : 1.4,
-          p?.kind === 'cable' ? 0.55 : 1.4,
-          p?.kind === 'cable' ? 0.85 : 1.4,
-        );
-      }
-    } else {
-      outline.visible = false;
-      ghost.visible = false;
+    outline.visible = !!chosen;
+    if (chosen) outline.box.copy(selectedBounds());
+    const v = current?.parts[selected];
+    ghost.visible =
+      !!chosen &&
+      interaction === 'manipulate' &&
+      !v?.installed &&
+      partFor(machine, selected)?.kind !== 'cable';
+    if (ghost.visible) {
+      ghost.box.copy(selectedBounds(true));
+      ghostMaterial.color.set(
+        drag?.near ? (preview?.ok ? '#4c9a62' : '#c25342') : '#c98443',
+      );
     }
     if (demo && chosen) {
       chosen.object.position.lerp(chosen.base, 0.09);
+      unsettled = true;
     }
     return unsettled;
   }
+  const allowedPan = new T.Box3(),
+    focusRegion = new T.Box3();
   const loop = createStageLoop(
     controls,
     () => {},
-    () => {
+    (_seconds, delta) => {
       if (disposed) return false;
       const unsettled = pose();
-      if (unsettled || drag || demo) renderer.shadowMap.needsUpdate = true;
+      if (unsettled || drag?.moved || demo)
+        renderer.shadowMap.needsUpdate = true;
       const moving = controls.update();
+      const modelBounds = frameBounds();
+      const panRegion = focused ? focusRegion : modelBounds;
+      const panCenter = panRegion.getCenter(new T.Vector3()),
+        panHalf = panRegion
+          .getSize(new T.Vector3())
+          .multiplyScalar(0.25)
+          .max(new T.Vector3(0.1, 0.1, 0.1));
+      allowedPan.set(
+        panCenter.clone().sub(panHalf),
+        panCenter.clone().add(panHalf),
+      );
+      const clamped = controls.target
+        .clone()
+        .clamp(allowedPan.min, allowedPan.max);
+      camera.position.add(clamped.clone().sub(controls.target));
+      controls.target.copy(clamped);
+      const opacity = groundOpacity(
+        camera.position.y,
+        ground.position.y + 0.075,
+      );
+      // opacity=0 时也关闭可见性，杜绝透明物体写深度继续挡住模型。
+      ground.visible = grid.visible = opacity > 0;
+      ground.material.opacity = opacity;
+      ground.material.depthWrite = opacity >= 0.99;
+      grid.material.opacity = opacity;
       renderer.render(scene, camera);
       host.dataset.renderedMachine = machine;
       host.dataset.frameCount = String(++frameCount);
@@ -477,142 +675,423 @@ export function createLearningScene(
       host.dataset.triangles = String(renderer.info.render.triangles);
       host.dataset.geometries = String(renderer.info.memory.geometries);
       host.dataset.textures = String(renderer.info.memory.textures);
-      const visibleNode = nodes.find(
-        (n) => n.id === selected && n.object.visible,
-      );
-      if (visibleNode) {
-        const bounds = canvas.getBoundingClientRect();
-        const screen = (p: T.Vector3) => {
-          const v = p.clone().project(camera);
-          return {
-            x: bounds.left + ((v.x + 1) * bounds.width) / 2,
-            y: bounds.top + ((1 - v.y) * bounds.height) / 2,
-          };
-        };
+      host.dataset.groundVisible = String(ground.visible);
+      host.dataset.cameraPosition = JSON.stringify(camera.position.toArray());
+      host.dataset.frameDeltaMs = String(Math.round(delta * 10000) / 10);
+      const chosen = nodes.find((n) => n.id === selected && n.object.visible);
+      if (chosen) {
         host.dataset.selectedPosition = JSON.stringify(
-          screen(visibleNode.object.position),
+          screen(boundsOf(chosen).getCenter(new T.Vector3())),
         );
-        host.dataset.installPosition = JSON.stringify(screen(visibleNode.base));
+        host.dataset.installPosition = JSON.stringify(
+          screen(boundsOf(chosen, true).getCenter(new T.Vector3())),
+        );
+        host.dataset.selectedWorldPositions = JSON.stringify(
+          nodes
+            .filter((n) => n.id === selected)
+            .map((n) => n.object.position.toArray()),
+        );
+        host.dataset.installZone = JSON.stringify(
+          screenBox(selectedBounds(true)),
+        );
+        const center = boundsOf(chosen).getCenter(new T.Vector3());
+        const a = screen(center),
+          b = screen(center.clone().add(removalAxis(machine, selected)));
+        host.dataset.removalVector = JSON.stringify({
+          x: b.x - a.x,
+          y: b.y - a.y,
+        });
       }
       host.dataset.settled = String(!unsettled);
-      return moving || unsettled || !!drag || !!demo;
+      host.dataset.dragging = String(!!drag?.moved);
+      host.dataset.dropStatus = drag?.near
+        ? preview?.ok
+          ? 'ready'
+          : 'blocked'
+        : 'away';
+      host.dataset.dragPart = drag?.id ?? '';
+      return moving || unsettled || !!drag?.moved || !!demo;
     },
   );
+
+  let lastWidth = 0,
+    lastHeight = 0,
+    lastRatio = 0,
+    quality = 'standard';
+  let framingPending = true;
+  function placeCamera(view: CameraView = 'default', part = false) {
+    if (!current || lastWidth === 0) return;
+    cancel();
+    pose();
+    const bounds = part ? new T.Box3() : frameBounds();
+    if (part)
+      for (const n of nodes)
+        if (n.id === selected)
+          bounds.union(boundsOf(n).translate(target(n).sub(n.object.position)));
+    if (
+      part &&
+      interaction === 'manipulate' &&
+      !current.parts[selected]?.installed
+    )
+      bounds.union(selectedBounds(true));
+    if (bounds.isEmpty()) return;
+    focused = part;
+    focusRegion.copy(bounds);
+    controls.enableDamping = false;
+    controls.update();
+    const size = new T.Vector3(),
+      look = new T.Vector3(),
+      position = new T.Vector3();
+    fitCameraToBounds(
+      bounds,
+      camera,
+      position,
+      look,
+      viewDirection(view, machine),
+      size,
+      1.08,
+      0.7,
+    );
+    const radius = Math.max(size.length() / 2, 0.15);
+    controls.minDistance = Math.max(0.25, radius * 1.05);
+    controls.maxDistance = Math.max(
+      12,
+      frameBounds().getSize(new T.Vector3()).length() * 5,
+    );
+    camera.position.copy(position);
+    controls.target.copy(look);
+    controls.update();
+    controls.enableDamping = true;
+    loop.wake();
+  }
   const resize = () => {
     const { width, height } = host.getBoundingClientRect();
-    renderer.setSize(Math.max(width, 1), Math.max(height, 1), false);
-    camera.aspect = width / Math.max(height, 1);
-    camera.updateProjectionMatrix();
+    if (width < 1 || height < 1) return;
+    const w = Math.round(width),
+      h = Math.round(height);
+    const ratio =
+      quality === 'low' ? 0.75 : Math.min(devicePixelRatio, 1.5) * 0.9;
+    if (ratio !== lastRatio || w !== lastWidth || h !== lastHeight) {
+      if (ratio !== lastRatio) renderer.setPixelRatio(ratio);
+      renderer.setSize(w, h, false);
+      lastWidth = w;
+      lastHeight = h;
+      lastRatio = ratio;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      host.dataset.resizeCount = String(
+        Number(host.dataset.resizeCount ?? 0) + 1,
+      );
+      if (framingPending && current) {
+        framingPending = false;
+        placeCamera();
+      }
+    }
     loop.wake();
   };
   const observer = new ResizeObserver(resize);
   observer.observe(host);
-  const point = (event: PointerEvent) => {
+  const visibility = new IntersectionObserver((entries) => {
+    if (entries.some((e) => e.isIntersecting)) {
+      resize();
+      loop.wake();
+    }
+  });
+  visibility.observe(host);
+  const resume = () => {
+    if (document.hidden) cancel();
+    else {
+      resize();
+      loop.wake();
+    }
+  };
+  const scroll = () => {
+    if (host.getBoundingClientRect().bottom > 0) loop.wake();
+  };
+  document.addEventListener('visibilitychange', resume);
+  window.addEventListener('resize', resize);
+  window.addEventListener('scroll', scroll, { passive: true });
+  function point(event: { clientX: number; clientY: number }) {
     const b = canvas.getBoundingClientRect();
     pointer.set(
       ((event.clientX - b.left) / b.width) * 2 - 1,
       (-(event.clientY - b.top) / b.height) * 2 + 1,
     );
     raycaster.setFromCamera(pointer, camera);
-  };
+  }
   function pick(event: PointerEvent) {
     point(event);
+    root.updateMatrixWorld(true);
     const hits = raycaster.intersectObjects(root.children, true);
     for (const hit of hits) {
-      let o: T.Object3D | null = hit.object;
-      while (o) {
-        if (o.userData.learningId && o.visible)
-          return String(o.userData.learningId);
+      let o: T.Object3D | null = hit.object,
+        id: string | null = null,
+        visible = true;
+      while (o && o !== root) {
+        visible &&= o.visible;
+        if (o.userData.learningId) id = String(o.userData.learningId);
         o = o.parent;
       }
+      if (!visible) continue;
+      // 不透过机箱实心表面去选后面的零件。
+      return id ? { id, point: hit.point.clone() } : null;
     }
     return null;
   }
-  const down = (event: PointerEvent) => {
-    if (event.button !== 0) return;
-    const id = pick(event);
-    if (!id) return;
-    callbacks.pick(id);
-    selected = id;
-    const group = nodes.filter((n) => n.id === id);
-    const chosen = group[0];
-    if (!chosen) return;
-    const normal = camera.getWorldDirection(new T.Vector3());
-    drag = {
-      id,
-      startX: event.clientX,
-      startY: event.clientY,
-      point: chosen.object.position.clone(),
-      plane: new T.Plane().setFromNormalAndCoplanarPoint(
-        normal,
-        chosen.object.position,
-      ),
-      nodes: group,
+  function down(event: PointerEvent) {
+    if (forwarding || (event.button !== 0 && event.pointerType !== 'touch'))
+      return;
+    const first = pointers.entries().next().value;
+    pointers.set(event.pointerId, {
+      x: event.clientX,
+      y: event.clientY,
+      type: event.pointerType,
+    });
+    if (pointers.size > 1) {
+      const wasCaptured = !!drag;
+      cancel(false, true);
+      if (wasCaptured && first) {
+        // 先前的单指由零件工具接管；重新交给 OrbitControls，双指始终缩放/平移。
+        forwarding = true;
+        canvas.dispatchEvent(
+          new PointerEvent('pointerdown', {
+            bubbles: true,
+            pointerId: first[0],
+            pointerType: first[1].type,
+            clientX: first[1].x,
+            clientY: first[1].y,
+            button: 0,
+            buttons: 1,
+          }),
+        );
+        forwarding = false;
+      }
+      return;
+    }
+    const hit = pick(event);
+    press = {
+      pointerId: event.pointerId,
+      id: hit?.id ?? null,
+      x: event.clientX,
+      y: event.clientY,
       moved: false,
     };
+    if (interaction !== 'manipulate' || demo || !hit || !current) return;
+    const p = partFor(machine, hit.id)!;
+    const v = current.parts[hit.id];
+    selected = hit.id;
+    callbacks.pick(hit.id);
+    refreshPreview();
+    const group = nodes.filter((n) => n.id === hit.id);
+    const action: Action = {
+      type: v.installed ? 'remove' : 'install',
+      part: hit.id,
+      rotation: v.rotation,
+    };
+    const check =
+      p.kind === 'cable'
+        ? {
+            ok: false,
+            message: '线缆请在右侧选择接口并连接，操作接头而不是拉扯线体。',
+          }
+        : probeAction(current, action);
+    const axis = removalAxis(machine, hit.id);
+    const a = screen(hit.point),
+      b = screen(hit.point.clone().add(axis));
+    const axisUsable = !v.installed || Math.hypot(a.x - b.x, a.y - b.y) >= 4;
+    drag = {
+      pointerId: event.pointerId,
+      id: hit.id,
+      group,
+      starts: group.map((n) => n.object.position.clone()),
+      rotations: group.map((n) => n.object.quaternion.clone()),
+      positions: group.map((n) => n.object.position.clone()),
+      grab: hit.point,
+      plane: new T.Plane().setFromNormalAndCoplanarPoint(
+        camera.getWorldDirection(new T.Vector3()),
+        hit.point,
+      ),
+      axis,
+      installed: v.installed,
+      moved: false,
+      near: false,
+      distance: 0,
+      allowed: check.ok && axisUsable,
+      reason: axisUsable
+        ? check.message
+        : '这个视角不便沿插拔方向移动；请切换到侧面，或使用右侧按钮。',
+      axisUsable,
+      startX: event.clientX,
+      startY: event.clientY,
+    };
+    feedback(
+      drag.allowed
+        ? v.installed
+          ? '沿插拔方向拖出，松手确认；Esc 取消。'
+          : '拖向橙色安装轮廓；绿色表示可以就位。'
+        : drag.reason,
+      drag.allowed ? 'hint' : 'blocked',
+    );
     controls.enabled = false;
     event.stopImmediatePropagation();
     canvas.setPointerCapture(event.pointerId);
     loop.wake();
-  };
-  const move = (event: PointerEvent) => {
-    if (!drag) return;
-    point(event);
-    if (!raycaster.ray.intersectPlane(drag.plane, tmp)) return;
-    drag.moved =
-      Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) > 8;
-    if (drag.moved) {
-      const offset = tmp.clone().sub(drag.point);
-      offset.clampLength(0, 18);
-      for (const n of drag.nodes)
-        n.object.position.copy(drag.point).add(offset);
+  }
+  function move(event: PointerEvent) {
+    if (pointers.has(event.pointerId))
+      pointers.set(event.pointerId, {
+        x: event.clientX,
+        y: event.clientY,
+        type: event.pointerType,
+      });
+    if (press?.pointerId === event.pointerId)
+      press.moved ||= movedFrom(event.clientX, event.clientY, press.x, press.y);
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    drag.moved ||= movedFrom(
+      event.clientX,
+      event.clientY,
+      drag.startX,
+      drag.startY,
+    );
+    if (!drag.moved) return;
+    if (!drag.allowed && drag.installed) {
+      loop.wake();
+      return;
     }
-    loop.wake();
-  };
-  const end = (event: PointerEvent) => {
-    if (!drag) return;
-    const old = drag;
-    drag = null;
-    controls.enabled = true;
-    if (canvas.hasPointerCapture(event.pointerId))
-      canvas.releasePointerCapture(event.pointerId);
-    if (old.moved && current) {
-      const p = partFor(machine, old.id)!,
-        v = current.parts[old.id];
-      if (p.kind === 'cable')
-        callbacks.message('线缆请在右侧选择对应接口后连接，或使用“断开连接”。');
-      else if (v.installed) callbacks.action({ type: 'remove', part: old.id });
-      else {
-        const screen = old.nodes[0].base.clone().project(camera),
-          b = canvas.getBoundingClientRect();
-        const distance = Math.hypot(
-          event.clientX - (b.left + ((screen.x + 1) * b.width) / 2),
-          event.clientY - (b.top + ((1 - screen.y) * b.height) / 2),
-        );
-        if (distance < 95)
-          callbacks.action({
-            type: 'install',
-            part: old.id,
-            rotation: v.rotation,
-          });
-        else
-          callbacks.message('靠近橙色安装框后松开。也可以点击右侧“安装就位”。');
+    const bounds = canvas.getBoundingClientRect();
+    const x = T.MathUtils.clamp(event.clientX, bounds.left, bounds.right);
+    const y = T.MathUtils.clamp(event.clientY, bounds.top, bounds.bottom);
+    point({ clientX: x, clientY: y });
+    const hit = new T.Vector3();
+    if (!raycaster.ray.intersectPlane(drag.plane, hit)) return;
+    const offset = hit.sub(drag.grab);
+    if (drag.installed) {
+      // 将屏幕移动投影到插拔轴，避免任意方向把部件穿过其他结构。
+      const a = screen(drag.grab),
+        b = screen(drag.grab.clone().add(drag.axis));
+      const sx = b.x - a.x,
+        sy = b.y - a.y;
+      drag.distance = T.MathUtils.clamp(
+        ((x - drag.startX) * sx + (y - drag.startY) * sy) / (sx * sx + sy * sy),
+        0,
+        5,
+      );
+      offset.copy(drag.axis).multiplyScalar(drag.distance);
+    } else {
+      // 保留抓取偏移，判定零件中心是否进入目标，而不是强迫鼠标落在中心。
+      const desiredCenter = boundsOf(drag.group[0])
+        .getCenter(new T.Vector3())
+        .sub(drag.group[0].object.position)
+        .add(drag.starts[0])
+        .add(offset);
+      const projected = screen(desiredCenter);
+      drag.near = inDropZone(
+        projected.x,
+        projected.y,
+        screenBox(selectedBounds(true)),
+      );
+      if (drag.near && preview?.ok) {
+        const approach = drag.axis.clone().multiplyScalar(0.25);
+        offset.copy(drag.group[0].base).sub(drag.starts[0]).add(approach);
       }
+      feedback(
+        drag.near
+          ? preview?.ok
+            ? '已对准 · 松手就位，随后仍需固定或锁定。'
+            : (preview?.message ?? '暂时不能安装。')
+          : '拖向橙色安装轮廓；Esc 取消。',
+        drag.near ? (preview?.ok ? 'ready' : 'blocked') : 'hint',
+      );
     }
+    drag.positions = drag.starts.map((start) => start.clone().add(offset));
     loop.wake();
+  }
+  function end(event: PointerEvent) {
+    pointers.delete(event.pointerId);
+    if (drag?.pointerId === event.pointerId) {
+      const old = drag;
+      drag = null;
+      press = null;
+      controls.enabled = true;
+      host.dataset.dragging = 'false';
+      if (canvas.hasPointerCapture(event.pointerId))
+        canvas.releasePointerCapture(event.pointerId);
+      const inside = (() => {
+        const b = canvas.getBoundingClientRect();
+        return (
+          event.clientX >= b.left &&
+          event.clientX <= b.right &&
+          event.clientY >= b.top &&
+          event.clientY <= b.bottom
+        );
+      })();
+      if (
+        old.moved &&
+        inside &&
+        current &&
+        old.allowed &&
+        (old.installed ? old.distance >= 0.5 : old.near)
+      ) {
+        const result = callbacks.action({
+          type: old.installed ? 'remove' : 'install',
+          part: old.id,
+          rotation: current.parts[old.id].rotation,
+        });
+        if (result.ok) {
+          current = result.state;
+          // 就位的最后一段沿插拔轴完成，固定/锁扣状态仍由用户操作。
+          if (!old.installed)
+            old.group.forEach((n) => {
+              n.object.position.copy(n.base).addScaledVector(old.axis, 0.25);
+            });
+          refreshPreview();
+          if (focused) placeCamera('default', true);
+          feedback(result.message, 'ready');
+        } else {
+          old.group.forEach((n, i) => n.object.position.copy(old.starts[i]));
+          feedback(result.message, 'blocked');
+        }
+      } else {
+        old.group.forEach((n, i) => n.object.position.copy(old.starts[i]));
+        if (old.moved)
+          feedback(
+            !old.allowed
+              ? old.reason
+              : '未完成投放，已恢复原位；可继续拖动或使用右侧按钮。',
+            !old.allowed ? 'blocked' : 'hint',
+          );
+      }
+      loop.wake();
+      return;
+    }
+    if (press?.pointerId === event.pointerId) {
+      const old = press;
+      press = null;
+      if (
+        !old.moved &&
+        !movedFrom(event.clientX, event.clientY, old.x, old.y) &&
+        old.id &&
+        pointers.size === 0
+      )
+        callbacks.pick(old.id);
+    }
+  }
+  const cancelled = (event: PointerEvent) => {
+    pointers.delete(event.pointerId);
+    if (
+      drag?.pointerId === event.pointerId ||
+      press?.pointerId === event.pointerId
+    )
+      cancel(true);
   };
-  const cancel = () => {
-    drag = null;
-    controls.enabled = true;
-    loop.wake();
+  const key = (event: KeyboardEvent) => {
+    if (event.key === 'Escape') cancel(true);
   };
   canvas.addEventListener('pointerdown', down, true);
-  canvas.addEventListener('pointermove', move);
-  canvas.addEventListener('pointerup', end);
-  canvas.addEventListener('pointercancel', cancel);
-  const key = (e: KeyboardEvent) => {
-    if (e.key === 'Escape') cancel();
-  };
+  canvas.addEventListener('pointermove', move, true);
+  canvas.addEventListener('pointerup', end, true);
+  canvas.addEventListener('pointercancel', cancelled, true);
+  canvas.addEventListener('lostpointercapture', cancelled);
   window.addEventListener('keydown', key);
   resize();
   callbacks.ready();
@@ -622,52 +1101,83 @@ export function createLearningScene(
       id: string,
       expand: boolean,
       demonstration: string | null = null,
-      quality = 'standard',
+      nextQuality = 'standard',
+      mode: InteractionMode = 'inspect',
     ) {
+      const stateChanged = current !== state,
+        selectionChanged = selected !== id;
+      const modeChanged = mode !== interaction;
+      if (
+        drag &&
+        (stateChanged ||
+          selectionChanged ||
+          mode !== interaction ||
+          expand !== expanded ||
+          demonstration !== demo)
+      )
+        cancel();
       current = state;
       selected = id;
       expanded = expand;
       demo = demonstration;
-      renderer.setPixelRatio(
-        quality === 'low' ? 0.75 : Math.min(devicePixelRatio, 1.5) * 0.9,
-      );
+      interaction = mode;
+      if (modeChanged || selectionChanged) feedback('');
+      host.dataset.interaction = mode;
+      quality = nextQuality;
+      if (stateChanged) {
+        for (const item of connectedObjects)
+          item.object.visible = !!state.parts[item.id].connected;
+        for (const item of fasteners) {
+          item.object.rotation.y = state.parts[item.id].fixed
+            ? 0
+            : Math.PI * 1.8;
+          item.object.scale.y = state.parts[item.id].fixed ? 1 : 1.6;
+        }
+      }
       renderer.shadowMap.enabled = quality !== 'low';
-      renderer.shadowMap.needsUpdate = true;
+      if (stateChanged) renderer.shadowMap.needsUpdate = true;
+      refreshPreview();
       resize();
+      if (framingPending) {
+        framingPending = false;
+        placeCamera();
+      }
+      if (selectionChanged && focused) placeCamera();
+      else if (modeChanged && focused) placeCamera('default', true);
       loop.wake();
     },
     focus(id: string) {
-      const n = nodes.find((n) => n.id === id);
-      if (!n) return;
-      const position = target(n);
-      controls.target.copy(position);
-      camera.position.copy(position).add(new T.Vector3(8, 7, 11));
-      loop.wake();
+      selected = id;
+      placeCamera('default', true);
     },
     resetCamera() {
-      camera.position.set(
-        machine === 'desktop' ? 23 : 18,
-        machine === 'desktop' ? 13 : 18,
-        machine === 'desktop' ? 28 : 24,
-      );
-      controls.target.set(2, machine === 'desktop' ? 0 : 1, 0);
-      loop.wake();
+      placeCamera();
+    },
+    setView(view: CameraView) {
+      placeCamera(view);
     },
     dispose() {
+      cancel();
       disposed = true;
       loop.dispose();
+      cancelAcceleration();
       observer.disconnect();
+      visibility.disconnect();
+      document.removeEventListener('visibilitychange', resume);
+      window.removeEventListener('resize', resize);
+      window.removeEventListener('scroll', scroll);
       window.removeEventListener('keydown', key);
       canvas.removeEventListener('pointerdown', down, true);
-      canvas.removeEventListener('pointermove', move);
-      canvas.removeEventListener('pointerup', end);
-      canvas.removeEventListener('pointercancel', cancel);
+      canvas.removeEventListener('pointermove', move, true);
+      canvas.removeEventListener('pointerup', end, true);
+      canvas.removeEventListener('pointercancel', cancelled, true);
+      canvas.removeEventListener('lostpointercapture', cancelled);
       root.add(ground);
       disposeModelResources({ root, pieces: [] });
       outline.geometry.dispose();
-      outline.material.dispose();
+      (outline.material as T.LineBasicMaterial).dispose();
       ghost.geometry.dispose();
-      ghost.material.dispose();
+      ghostMaterial.dispose();
       grid.dispose();
       runtime.dispose();
     },

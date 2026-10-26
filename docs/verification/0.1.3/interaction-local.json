@@ -1,0 +1,126 @@
+{
+  "url": "http://127.0.0.1:4173/",
+  "checks": [
+    "两机型、两画质、上下视角与展开观察均有可见模型像素",
+    "实际鼠标转到底部、页面滚动、小屏缩放和标签页返回正常",
+    "找零件题中旋转并回到起点也不会误提交答案",
+    "观察不拆卸；偏心抓取不跳动、套装间距保持、Esc 与无效投放复原",
+    "指针取消与拖动中切换工具释放捕获并保持存档",
+    "反向内存显示阻挡反馈，松手不会安装",
+    "两机型真实拖拽安装、未锁定判定、撤销、锁扣预检和沿轴拆卸通过",
+    "触屏取消复原、双指缩放有效且不提交零件操作"
+  ],
+  "errors": [],
+  "images": [
+    {
+      "name": "desktop-standard-bottom",
+      "darkFraction": 0.16492299966521592,
+      "width": 868,
+      "height": 481
+    },
+    {
+      "name": "desktop-standard-top",
+      "darkFraction": 0.149313692668229,
+      "width": 868,
+      "height": 481
+    },
+    {
+      "name": "desktop-standard-default",
+      "darkFraction": 0.2982089052561098,
+      "width": 868,
+      "height": 481
+    },
+    {
+      "name": "desktop-low-bottom",
+      "darkFraction": 0.16500669568128556,
+      "width": 868,
+      "height": 481
+    },
+    {
+      "name": "desktop-low-top",
+      "darkFraction": 0.1486441245396719,
+      "width": 868,
+      "height": 481
+    },
+    {
+      "name": "desktop-low-default",
+      "darkFraction": 0.29854368932038833,
+      "width": 868,
+      "height": 481
+    },
+    {
+      "name": "desktop-expanded-bottom",
+      "darkFraction": 0.16337462336792768,
+      "width": 868,
+      "height": 481
+    },
+    {
+      "name": "laptop-standard-bottom",
+      "darkFraction": 0.2296618680950787,
+      "width": 868,
+      "height": 481
+    },
+    {
+      "name": "laptop-standard-top",
+      "darkFraction": 0.24409943086709074,
+      "width": 868,
+      "height": 481
+    },
+    {
+      "name": "laptop-standard-default",
+      "darkFraction": 0.25866253766320724,
+      "width": 868,
+      "height": 481
+    },
+    {
+      "name": "laptop-low-bottom",
+      "darkFraction": 0.22962002008704385,
+      "width": 868,
+      "height": 481
+    },
+    {
+      "name": "laptop-low-top",
+      "darkFraction": 0.24468530297957816,
+      "width": 868,
+      "height": 481
+    },
+    {
+      "name": "laptop-low-default",
+      "darkFraction": 0.2594576498158688,
+      "width": 868,
+      "height": 481
+    },
+    {
+      "name": "laptop-expanded-bottom",
+      "darkFraction": 0.24966521593572147,
+      "width": 868,
+      "height": 481
+    },
+    {
+      "name": "mouse-orbit-underside",
+      "darkFraction": 0.16902410445262805,
+      "width": 868,
+      "height": 481
+    },
+    {
+      "name": "scroll-bottom",
+      "darkFraction": 0.29808336123200535,
+      "width": 868,
+      "height": 481
+    },
+    {
+      "name": "mobile-bottom",
+      "darkFraction": 0.29555555555555557,
+      "width": 358,
+      "height": 351
+    },
+    {
+      "name": "resume",
+      "darkFraction": 0.29808336123200535,
+      "width": 868,
+      "height": 481
+    }
+  ],
+  "version": "v0.1.3",
+  "passed": true
+}

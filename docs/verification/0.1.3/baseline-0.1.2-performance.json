@@ -1,0 +1,220 @@
+{
+  "testedAt": "2026-10-26T08:58:47.216Z",
+  "viewport": "1440×1000",
+  "quality": "standard",
+  "switches": [
+    {
+      "switch": 1,
+      "machine": "laptop",
+      "geometries": 225,
+      "textures": 9,
+      "triangles": 242644,
+      "drawCalls": 250,
+      "memory": {
+        "processCount": 7,
+        "workingSetMB": 1139,
+        "privateCommitMB": 874,
+        "jsHeapUsedMB": 14
+      }
+    },
+    {
+      "switch": 2,
+      "machine": "desktop",
+      "geometries": 487,
+      "textures": 100,
+      "triangles": 365352,
+      "drawCalls": 537
+    },
+    {
+      "switch": 3,
+      "machine": "laptop",
+      "geometries": 225,
+      "textures": 9,
+      "triangles": 242644,
+      "drawCalls": 250
+    },
+    {
+      "switch": 4,
+      "machine": "desktop",
+      "geometries": 487,
+      "textures": 100,
+      "triangles": 365352,
+      "drawCalls": 537
+    },
+    {
+      "switch": 5,
+      "machine": "laptop",
+      "geometries": 225,
+      "textures": 9,
+      "triangles": 242644,
+      "drawCalls": 250
+    },
+    {
+      "switch": 6,
+      "machine": "desktop",
+      "geometries": 487,
+      "textures": 100,
+      "triangles": 365352,
+      "drawCalls": 537
+    },
+    {
+      "switch": 7,
+      "machine": "laptop",
+      "geometries": 225,
+      "textures": 9,
+      "triangles": 242644,
+      "drawCalls": 250
+    },
+    {
+      "switch": 8,
+      "machine": "desktop",
+      "geometries": 487,
+      "textures": 100,
+      "triangles": 365352,
+      "drawCalls": 537
+    },
+    {
+      "switch": 9,
+      "machine": "laptop",
+      "geometries": 225,
+      "textures": 9,
+      "triangles": 242644,
+      "drawCalls": 250
+    },
+    {
+      "switch": 10,
+      "machine": "desktop",
+      "geometries": 487,
+      "textures": 100,
+      "triangles": 365352,
+      "drawCalls": 537,
+      "memory": {
+        "processCount": 7,
+        "workingSetMB": 1136,
+        "privateCommitMB": 859,
+        "jsHeapUsedMB": 20
+      }
+    },
+    {
+      "switch": 11,
+      "machine": "laptop",
+      "geometries": 225,
+      "textures": 9,
+      "triangles": 242644,
+      "drawCalls": 250
+    },
+    {
+      "switch": 12,
+      "machine": "desktop",
+      "geometries": 487,
+      "textures": 100,
+      "triangles": 365352,
+      "drawCalls": 537
+    },
+    {
+      "switch": 13,
+      "machine": "laptop",
+      "geometries": 225,
+      "textures": 9,
+      "triangles": 242644,
+      "drawCalls": 250
+    },
+    {
+      "switch": 14,
+      "machine": "desktop",
+      "geometries": 487,
+      "textures": 100,
+      "triangles": 365352,
+      "drawCalls": 537
+    },
+    {
+      "switch": 15,
+      "machine": "laptop",
+      "geometries": 225,
+      "textures": 9,
+      "triangles": 242644,
+      "drawCalls": 250
+    },
+    {
+      "switch": 16,
+      "machine": "desktop",
+      "geometries": 487,
+      "textures": 100,
+      "triangles": 365352,
+      "drawCalls": 537
+    },
+    {
+      "switch": 17,
+      "machine": "laptop",
+      "geometries": 225,
+      "textures": 9,
+      "triangles": 242644,
+      "drawCalls": 250
+    },
+    {
+      "switch": 18,
+      "machine": "desktop",
+      "geometries": 487,
+      "textures": 100,
+      "triangles": 365352,
+      "drawCalls": 537
+    },
+    {
+      "switch": 19,
+      "machine": "laptop",
+      "geometries": 225,
+      "textures": 9,
+      "triangles": 242644,
+      "drawCalls": 250
+    },
+    {
+      "switch": 20,
+      "machine": "desktop",
+      "geometries": 487,
+      "textures": 100,
+      "triangles": 365352,
+      "drawCalls": 537,
+      "memory": {
+        "processCount": 7,
+        "workingSetMB": 1183,
+        "privateCommitMB": 895,
+        "jsHeapUsedMB": 22
+      }
+    }
+  ],
+  "notes": [
+    "内存包括本次独立自动化浏览器的全部进程；工作集可能重复计算共享页。",
+    "帧率是连续旋转工作台期间的实际渲染次数/时间；并非所有设备的性能保证。"
+  ],
+  "browser": "155.0.8059.85",
+  "graphics": "ANGLE (Intel, Intel(R) UHD Graphics (0x0000A7A8) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "desktopMemory": {
+    "processCount": 7,
+    "workingSetMB": 1182,
+    "privateCommitMB": 924,
+    "jsHeapUsedMB": 22
+  },
+  "renderingResolution": {
+    "width": 716,
+    "height": 432,
+    "cssWidth": 796,
+    "cssHeight": 480
+  },
+  "desktopRotation": {
+    "renderedFrames": 251,
+    "fps": 37.2,
+    "seconds": 6.75
+  },
+  "laptopMemory": {
+    "processCount": 7,
+    "workingSetMB": 1250,
+    "privateCommitMB": 959,
+    "jsHeapUsedMB": 20
+  },
+  "laptopRotation": {
+    "renderedFrames": 336,
+    "fps": 59.5,
+    "seconds": 5.65
+  },
+  "resourcesStable": true
+}

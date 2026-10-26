@@ -446,6 +446,99 @@
   border-radius: 7px;
   color: #6a7c67;
 }
+.lab-camera select {
+  max-width: 108px;
+  border: 1px solid #dce3d6;
+  border-radius: 7px;
+  padding: 7px;
+  background: #f8faf4f2;
+  color: #53684d;
+  font: inherit;
+  font-size: 11px;
+}
+.lab-tools {
+  position: absolute;
+  top: 14px;
+  left: 15px;
+  display: flex;
+  gap: 5px;
+  z-index: 2;
+  max-width: calc(100% - 30px);
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.lab-tools button,
+.lab-tools > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 9px;
+  border: 1px solid #d6dfcc;
+  border-radius: 6px;
+  background: #fafcf5ed;
+  color: #627759;
+  font-size: 11px;
+}
+.lab-tools button[aria-pressed='true'] {
+  background: #e6edda;
+  border-color: #93a57f;
+  color: #354e32;
+}
+.lab-tools button:disabled {
+  opacity: 0.5;
+}
+.lab-tools button:focus-visible,
+.lab-camera select:focus-visible {
+  outline: 2px solid #b57148;
+  outline-offset: 2px;
+}
+.lab-drag-feedback {
+  position: absolute;
+  top: 57px;
+  left: 15px;
+  max-width: calc(100% - 30px);
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: #fffbf0f2;
+  color: #966334;
+  font-size: 11px;
+  pointer-events: none;
+  z-index: 2;
+}
+.lab-drag-feedback:empty {
+  display: none;
+}
+.lab-drag-feedback[data-tone='ready'] {
+  background: #ebf5e7f2;
+  color: #3d7044;
+}
+.lab-drag-feedback[data-tone='blocked'] {
+  background: #fff0eaf2;
+  color: #a64e39;
+}
+.lab-canvas[data-interaction='manipulate'] {
+  cursor: grab;
+}
+.lab-canvas[data-dragging='true'] {
+  cursor: grabbing;
+}
+.scene-wrap:has(.lab-tools) .scene-watermark {
+  display: none;
+}
+@media (max-width: 600px) {
+  .scene-instructions {
+    bottom: 58px;
+    max-width: calc(100% - 20px);
+    font-size: 9px;
+  }
+  .lab-tools button,
+  .lab-tools > span {
+    font-size: 10px;
+    padding: 6px;
+  }
+}
 .lab-loading {
   position: absolute;
   inset: 0;
@@ -1055,9 +1148,10 @@
 .library-machine {
   display: flex;
   gap: 5px;
-  position: absolute;
-  z-index: 3;
-  margin: 15px;
+  position: relative;
+  margin: 0;
+  padding: 8px 16px;
+  border-bottom: 1px solid #dce3d6;
 }
 .library-machine button {
   border: 1px solid #d6e0ce;

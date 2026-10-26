@@ -1,0 +1,25 @@
+{
+  "url": "http://127.0.0.1:4173/",
+  "viewport": "1440×1000",
+  "measurements": [
+    {
+      "machine": "desktop",
+      "inputSamples": 12,
+      "p95InputMs": 72,
+      "meanInputMs": 45,
+      "rotationFPS": 55.4,
+      "p95FrameMs": 33.3
+    },
+    {
+      "machine": "laptop",
+      "inputSamples": 12,
+      "p95InputMs": 37.2,
+      "meanInputMs": 32,
+      "rotationFPS": 59.4,
+      "p95FrameMs": 17
+    }
+  ],
+  "note": "输入延迟为指针按下事件至第二次 requestAnimationFrame 的近似显示耗时；帧间隔按实际场景帧计数采样。",
+  "version": "v0.1.3",
+  "browser": "155.0.8059.85"
+}

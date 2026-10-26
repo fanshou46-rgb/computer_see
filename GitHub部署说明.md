@@ -28,9 +28,12 @@ npm run size
 npm run build:pages
 node scripts/check-bundle-size.mjs dist-pages /computer_see/
 node scripts/pages-smoke.mjs
+node --experimental-strip-types scripts/interaction-smoke.mjs
 ```
 
 `pages-smoke.mjs` 默认使用本机 Chrome，在严格的 `/computer_see/` 静态目录下验收生产构建；可通过 `BROWSER_EXECUTABLE` 指定浏览器。`LAB_SMOKE_BASE=/`、`LAB_SMOKE_DIST=dist` 可验收本地构建。`PAGES_BASE_URL` 可指定已发布的网站地址。
+
+运行交互验收前先启动本地成品服务 `node scripts/serve-local.mjs --no-open`；`interaction-smoke.mjs` 默认测试 `http://127.0.0.1:4173/`，也可用 `LEARNING_BASE_URL` 指定公网地址。它会在独立浏览器环境中验证真实鼠标、触屏、底部像素和旧存档结构，不修改日常使用的浏览器进度。`interaction-performance.mjs` 测量拖动输入与帧间隔，输出位于 `outputs/interaction/`。
 
 本地使用 `npm run build` 生成 `dist/`，双击“启动电脑实验室.cmd”。本地构建和在线构建分开放置。
 
