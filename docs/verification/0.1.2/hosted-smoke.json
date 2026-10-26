@@ -1,0 +1,15 @@
+{
+  "version": "0.1.2",
+  "checks": [
+    "中文课程首页、版本和 3D 教学场景加载",
+    "进入小游戏后刷新恢复当前步骤",
+    "自由探索懒加载、十章中文指南和返回链接",
+    "内存部件直达链接、刷新和返回课程保留网站目录",
+    "图标正常、浏览器无异常和 HTTP 错误"
+  ],
+  "pageErrors": [],
+  "failedRequests": [],
+  "badResponses": [],
+  "url": "https://fanshou46-rgb.github.io/computer_see/",
+  "passed": true
+}
