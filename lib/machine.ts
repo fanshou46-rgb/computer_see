@@ -527,6 +527,13 @@ export function buildMachine(tools: ModelTools, root: T.Group) {
     [CAGE_X + mm(6), FLOOR + 1.0, -0.3 + mm(39)],
   ];
   loom(sataPath, 0.09, '#1f2325');
+  // 课程复用这些已经避开硬件的实际线缆路径，避免把数据线误画成电源输出。
+  root.userData.learningPowerPaths = {
+    atx: atxPath,
+    eps: epsPath,
+    gpuPower: gpuPath,
+    sataPower: sataPath,
+  };
   add('psucable', cables, [0, 0, 0], [0, -1.4, 1.2], 0);
   root.add(
     buildPowerFlow({

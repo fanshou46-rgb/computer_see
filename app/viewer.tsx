@@ -1,4 +1,5 @@
 'use client';
+import {zh} from '@/lib/chinese';
 import { useState } from 'react';
 import type { ExplorerState, Selection } from '@/lib/explorer-state';
 import type { PartLabel } from '@/lib/inventory-labels';
@@ -48,17 +49,17 @@ export default function Viewer({
       labels: setLabels,
       error: reportError,
     }),
-    'The 3D viewer could not load. Reload to try again.',
+    "3D 模型未能加载，请刷新重试。",
   );
   return (
     <>
       <div
         ref={host}
         className="viewport"
-        aria-label="Interactive 3D computer model"
+        aria-label="可交互的 3D 电脑模型"
       >
         {labels.length > 0 && (
-          <ul className="part-labels" aria-label="Parts on the tray">
+          <ul className="part-labels" aria-label="托盘中的部件">
             {labels.map((label) => (
               <li
                 key={label.concept}
@@ -73,7 +74,7 @@ export default function Viewer({
                   }
                   aria-pressed={state.selection?.concept === label.concept}
                 >
-                  {label.name}
+                  {zh(label.name)}
                 </button>
               </li>
             ))}
@@ -85,16 +86,16 @@ export default function Viewer({
           rather than being drawn underneath it. */}
       {loading && !error && (
         <div className="empty-scene loading">
-          <h3>Loading components for you…</h3>
+          <h3>正在准备部件模型…</h3>
         </div>
       )}
       {!ready && !error && (
-        <output className="viewer-status sr-only">Loading…</output>
+        <output className="viewer-status sr-only">加载中…</output>
       )}
       {error && (
         <div className="viewer-status error" role="alert">
           {error}
-          <button onClick={() => location.reload()}>Reload viewer</button>
+          <button onClick={() => location.reload()}>重新加载模型</button>
         </div>
       )}
       {hover && (
@@ -106,11 +107,11 @@ export default function Viewer({
             top: Math.max(10, Math.min(hover.y - 60, window.innerHeight - 80)),
           }}
         >
-          {hover.name}
+          {zh(hover.name)}
           <span>
             {hover.opens
-              ? 'Left-click to open · right-click to inspect'
-              : 'Click to inspect'}
+              ? "左键进入 · 右键查看说明"
+              : "点击查看说明"}
           </span>
         </div>
       )}

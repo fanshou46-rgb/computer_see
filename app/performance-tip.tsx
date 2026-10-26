@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ArrowUpRight, X, Zap } from 'lucide-react';
 import { hasHardwareAcceleration } from '@/lib/graphics-acceleration';
+import { GUIDE_ACCELERATION } from './links';
 
 const seenKey = 'pc-anatomy-performance-tip-v1';
 
@@ -53,23 +54,14 @@ export default function PerformanceTip({ ready }: { ready: boolean }) {
       <Zap size={19} aria-hidden="true" />
       <div>
         <output>
-          <strong>Smoother 3D exploration</strong>
-          <span className="tip-copy">
-            Try enabling browser hardware acceleration for smoother rendering.
-          </span>
+          <strong>让 3D 探索更流畅</strong>
+          <span className="tip-copy">开启浏览器硬件加速可改善渲染流畅度。</span>
         </output>
-        <a
-          href="/guide/index.html#smoother-3d"
-          target="_blank"
-          rel="noreferrer"
-        >
-          How to enable it <ArrowUpRight size={13} />
+        <a href={GUIDE_ACCELERATION} target="_blank" rel="noreferrer">
+          如何开启 <ArrowUpRight size={13} />
         </a>
       </div>
-      <button
-        aria-label="Dismiss performance tip"
-        onClick={() => setVisible(false)}
-      >
+      <button aria-label="关闭性能提示" onClick={() => setVisible(false)}>
         <X size={17} />
       </button>
     </aside>

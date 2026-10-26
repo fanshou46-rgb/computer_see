@@ -1,4 +1,5 @@
 'use client';
+import {zh} from '@/lib/chinese';
 import { useCallback, useEffect, useState } from 'react';
 import {
   ChevronDown,
@@ -85,14 +86,14 @@ export default function StageTools({
         });
     } catch {
       setFullscreenError(
-        'Fullscreen is blocked by this browser. Press F11 instead.',
+        "浏览器阻止全屏，可以使用 F11。",
       );
     }
   }, []);
 
   return (
     <div className="stage-tools">
-      <div className="view-controls" aria-label="Camera controls">
+      <div className="view-controls" aria-label="视角控制">
         {views.map((option, i) => {
           const active = flattened ? option === 'top' : view === option;
           const name = option[0].toUpperCase() + option.slice(1) + ' view';
@@ -112,8 +113,8 @@ export default function StageTools({
         })}
         <span />
         <button
-          title={fullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
-          aria-label={fullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+          title={fullscreen ? "退出全屏" : "进入全屏"}
+          aria-label={fullscreen ? "退出全屏" : "进入全屏"}
           aria-pressed={fullscreen}
           className={fullscreen ? 'active' : ''}
           onClick={() => void toggleFullscreen()}
@@ -126,17 +127,17 @@ export default function StageTools({
           className={'airflow-toggle' + (showingAirflow ? ' active' : '')}
           title={
             showingAirflow
-              ? 'Hide the path the air takes'
+              ? "隐藏气流路径"
               : assembled
-                ? 'Show the path the air takes through the machine'
-                : 'Show airflow — it draws on the assembled machine'
+                ? "显示气流经过电脑的路径"
+                : "显示整机气流"
           }
-          aria-label={showingAirflow ? 'Hide airflow' : 'Show airflow'}
+          aria-label={showingAirflow ? "隐藏气流" : "显示气流"}
           aria-pressed={showingAirflow}
           onClick={onToggleAirflow}
         >
           <Wind size={15} />
-          <span>Airflow</span>
+          <span>气流</span>
           <small>{showingAirflow ? 'On' : 'Off'}</small>
         </button>
       )}
@@ -151,7 +152,7 @@ export default function StageTools({
           >
             <EyeOff size={15} />
             <span>
-              {hiddenComponents.length} hidden component
+              {hiddenComponents.length} 个隐藏部件
               {hiddenComponents.length === 1 ? '' : 's'}
             </span>
             <ChevronDown size={14} />
@@ -159,20 +160,20 @@ export default function StageTools({
           {hiddenMenuOpen && (
             <div className="hidden-components-menu" id="hidden-components-menu">
               <div className="hidden-menu-heading">
-                <strong>Hidden on this scale</strong>
-                <button onClick={onClearHidden}>Show all</button>
+                <strong>本层已隐藏部件</strong>
+                <button onClick={onClearHidden}>全部显示</button>
               </div>
               <ul>
                 {hiddenComponents.map((component) => (
                   <li key={component.id}>
                     <i style={{ background: colors[component.category] }} />
-                    <span>{component.shortName}</span>
+                    <span>{zh(component.shortName)}</span>
                     <button
                       aria-label={`Show ${component.name}`}
                       onClick={() => onUnhide(component.id)}
                     >
                       <Eye size={14} />
-                      Show
+                      显示
                     </button>
                   </li>
                 ))}

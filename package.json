@@ -1,15 +1,15 @@
 {
   "name": "pc-anatomy",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "private": false,
   "description": "An interactive 3D explorer of a desktop computer, from an assembled ATX tower to a single streaming multiprocessor.",
   "license": "MIT",
   "author": "Yoseph",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Yoosseph/pc-anatomy.git"
+    "url": "git+https://github.com/fanshou46-rgb/computer_see.git"
   },
-  "homepage": "https://github.com/Yoosseph/pc-anatomy#readme",
+  "homepage": "https://fanshou46-rgb.github.io/computer_see/",
   "keywords": [
     "computer-hardware",
     "three.js",
@@ -23,6 +23,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
+    "build:pages": "tsc --noEmit && vite build --base=/computer_see/ --outDir=dist-pages",
     "start": "vite preview --host 127.0.0.1",
     "lint": "oxlint",
     "format": "oxfmt",
@@ -51,13 +52,13 @@
     "@types/react-dom": "19.2.3",
     "@types/three": "^0.185.4",
     "@vitejs/plugin-react": "6.0.2",
-    "oxfmt": "0.61.0",
+    "oxfmt": "0.74.0",
     "oxlint": "1.76.0",
     "oxlint-tsgolint": "7.0.2001",
     "tailwindcss": "4.2.1",
     "tsx": "^4.23.13",
     "typescript": "5.9.3",
-    "vite": "8.0.13"
+    "vite": "8.3.5"
   },
   "type": "module"
 }

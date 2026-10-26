@@ -1,4 +1,5 @@
 'use client';
+import {zh} from '@/lib/chinese';
 import { useState } from 'react';
 import {
   comparisonItem,
@@ -37,7 +38,7 @@ export default function ComparisonViewer({ state }: Props) {
         ),
       error: reportError,
     }),
-    'The comparison viewer could not load. Reload to try again.',
+    "对比模型未能加载，请刷新重试。",
   );
 
   return (
@@ -58,12 +59,12 @@ export default function ComparisonViewer({ state }: Props) {
         />
       </div>
       {!ready && !error && (
-        <output className="comparison-loading">Loading both models…</output>
+        <output className="comparison-loading">正在加载两个模型…</output>
       )}
       {error && (
         <div className="comparison-error" role="alert">
           {error}
-          <button onClick={() => location.reload()}>Reload viewer</button>
+          <button onClick={() => location.reload()}>重新加载模型</button>
         </div>
       )}
       {hover && (
@@ -75,8 +76,8 @@ export default function ComparisonViewer({ state }: Props) {
             top: Math.max(10, Math.min(hover.y - 48, window.innerHeight - 70)),
           }}
         >
-          {hover.name}
-          <span>Compared part</span>
+          {zh(hover.name)}
+          <span>对比部件</span>
         </div>
       )}
     </>

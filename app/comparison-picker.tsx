@@ -1,4 +1,5 @@
 'use client';
+import {zh} from '@/lib/chinese';
 import { useMemo, useRef, useState, type RefObject } from 'react';
 import { Check, Search, X } from 'lucide-react';
 import {
@@ -48,7 +49,7 @@ function PickerResult({ item, selected, takenBy, onChoose }: ResultProps) {
         onClick={onChoose}
       >
         <span className="comparison-result-copy">
-          <strong>{item.name}</strong>
+          <strong>{zh(item.name)}</strong>
           <small>{comparisonItemPath(item)}</small>
           <span>{item.note}</span>
         </span>
@@ -56,10 +57,10 @@ function PickerResult({ item, selected, takenBy, onChoose }: ResultProps) {
           {takenBy
             ? `On ${takenBy}`
             : item.kind === 'logical'
-              ? 'Diagram'
-              : 'Hardware'}
+              ? "原理图"
+              : "实体硬件"}
         </span>
-        {selected && <Check size={16} aria-label="Selected" />}
+        {selected && <Check size={16} aria-label="已选中" />}
       </button>
     </li>
   );
@@ -122,12 +123,12 @@ export default function ComparisonPicker({
       >
         <header className="comparison-picker-heading">
           <div>
-            <DialogTitle>Choose part {sideLetter(side)}</DialogTitle>
+            <DialogTitle>选择部件 {sideLetter(side)}</DialogTitle>
             <DialogDescription>
-              Browse any system. Your other choice stays in place.
+              选择任意机型，另一侧保持不变。
             </DialogDescription>
           </div>
-          <button aria-label="Close part picker" onClick={onClose}>
+          <button aria-label="关闭部件选择" onClick={onClose}>
             <X size={20} />
           </button>
         </header>
@@ -136,16 +137,16 @@ export default function ComparisonPicker({
             <Search size={17} aria-hidden="true" />
             <input
               ref={search}
-              aria-label="Search parts"
-              placeholder="Search parts, models or architecture…"
+              aria-label="搜索零件"
+              placeholder="搜索零件、型号或架构…"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
             />
           </label>
           <label className="comparison-system-filter">
-            <span>System</span>
+            <span>机型</span>
             <select
-              aria-label="System"
+              aria-label="机型"
               value={system ?? 'all'}
               onChange={(event) =>
                 setSystem(
@@ -155,22 +156,22 @@ export default function ComparisonPicker({
                 )
               }
             >
-              <option value="all">All systems</option>
+              <option value="all">全部机型</option>
               {systemRoots.map((root) => (
                 <option key={root} value={root}>
-                  {levels[root].name}
+                  {zh(levels[root].name)}
                 </option>
               ))}
             </select>
           </label>
         </div>
         <div className="comparison-picker-body">
-          <nav className="comparison-category-nav" aria-label="Part categories">
+          <nav className="comparison-category-nav" aria-label="部件分类">
             <button
               aria-pressed={!category}
               onClick={() => setCategory(undefined)}
             >
-              All parts <span aria-hidden="true">{matches.length}</span>
+              全部部件 <span aria-hidden="true">{matches.length}</span>
             </button>
             {comparisonCategories.map((entry) => (
               <button
@@ -178,7 +179,7 @@ export default function ComparisonPicker({
                 aria-pressed={category === entry.id}
                 onClick={() => setCategory(entry.id)}
               >
-                {entry.label}
+                {zh(entry.label)}
                 <span aria-hidden="true">{countIn(entry.id)}</span>
               </button>
             ))}
@@ -189,14 +190,14 @@ export default function ComparisonPicker({
             </output>
             {!results.length && (
               <div className="comparison-empty">
-                <strong>No matching parts</strong>
-                <p>Try another category, system or search.</p>
-                <button onClick={clear}>Clear filters</button>
+                <strong>未找到部件</strong>
+                <p>请更换分类、机型或搜索词。</p>
+                <button onClick={clear}>清除筛选</button>
               </div>
             )}
             {groups.map((group) => (
               <section key={group.id} aria-label={group.label}>
-                <h3>{group.label}</h3>
+                <h3>{zh(group.label)}</h3>
                 <ul>
                   {group.items.map((item) => (
                     <PickerResult

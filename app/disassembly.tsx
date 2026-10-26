@@ -25,9 +25,9 @@ export default function Disassembly({
   onToggleAuto,
   onSetExplode,
   onReset,
-  sectionLabel = 'Explosion control',
+  sectionLabel = "展开控制",
   title,
-  sliderLabel = 'Disassemble the specimen',
+  sliderLabel = "拆解当前部件",
   valueText,
 }: Props) {
   const phases = levels[level].phases,
@@ -44,17 +44,17 @@ export default function Disassembly({
           onClick={onToggleAuto}
           aria-label={
             playing
-              ? 'Pause automatic disassembly'
-              : 'Take it apart automatically'
+              ? "暂停自动拆解"
+              : "自动逐步拆解"
           }
         >
           {playing ? <Pause size={23} /> : <Play size={23} />}
-          <span>{playing ? 'Pause' : 'Auto'}</span>
+          <span>{playing ? "暂停" : "自动拆解"}</span>
         </button>
         <div className="disassembly-label">
           <div>
-            <strong>{title ?? (logical ? 'Expand' : 'Disassemble')}</strong>
-            <span>DRAG OR PLAY</span>
+            <strong>{title ?? (logical ? "展开" : "拆解")}</strong>
+            <span>拖动进度或播放</span>
           </div>
         </div>
       </div>
@@ -88,11 +88,11 @@ export default function Disassembly({
         <output>{explodePercent}%</output>
         <button
           className="reset"
-          aria-label="Reset camera and assembly"
+          aria-label="复位视角与展开状态"
           onClick={onReset}
         >
           <RotateCcw size={18} />
-          <span>Reset</span>
+          <span>复位</span>
         </button>
       </div>
     </section>

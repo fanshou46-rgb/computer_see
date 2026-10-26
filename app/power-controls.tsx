@@ -1,4 +1,5 @@
 'use client';
+import {zh} from '@/lib/chinese';
 import { useState } from 'react';
 import { Zap } from 'lucide-react';
 import {
@@ -12,7 +13,7 @@ const targets: { id: PowerTarget; label: string }[] = [
   { id: 'all', label: 'All' },
   { id: 'cpu', label: 'CPU' },
   { id: 'gpu', label: 'GPU' },
-  { id: 'storage', label: 'Storage' },
+  { id: 'storage', label: "存储" },
 ];
 
 export default function PowerControls({
@@ -35,42 +36,42 @@ export default function PowerControls({
         className={
           'airflow-toggle power-toggle' + (state.power ? ' active' : '')
         }
-        aria-label={state.power ? 'Hide power flow' : 'Show power flow'}
+        aria-label={state.power ? "隐藏供电" : "显示供电"}
         aria-pressed={state.power}
         aria-controls="power-flow-panel"
-        title="Trace power from the PSU to each component"
+        title="追踪从电源到各部件的供电"
         onClick={onToggle}
       >
         <Zap size={15} />
-        <span>Power</span>
+        <span>供电</span>
         <small>{state.power ? 'On' : 'Off'}</small>
       </button>
       {state.power && (
         <section
           className={'power-panel' + (expanded ? ' expanded' : '')}
           id="power-flow-panel"
-          aria-label="Power flow"
+          aria-label="供电流向"
         >
           <div className="power-heading">
-            <strong>Follow the power</strong>
-            <span>FROM THE PSU</span>
+            <strong>追踪供电</strong>
+            <span>从电源出发</span>
             <button
               className="power-legend-toggle"
               aria-expanded={expanded}
               aria-controls="power-legend"
               onClick={() => setExpanded((value) => !value)}
             >
-              {expanded ? 'Less' : 'Details'}
+              {expanded ? "收起" : "详情"}
             </button>
           </div>
-          <fieldset className="power-targets" aria-label="Power destination">
+          <fieldset className="power-targets" aria-label="供电对象">
             {targets.map((target) => (
               <button
                 key={target.id}
                 aria-pressed={state.powerTarget === target.id}
                 onClick={() => onTarget(target.id)}
               >
-                {target.label}
+                {zh(target.label)}
               </button>
             ))}
           </fieldset>
@@ -88,7 +89,7 @@ export default function PowerControls({
                   aria-label={`Inspect ${route.destination}: ${route.label}`}
                 >
                   <span>
-                    <strong>{route.label}</strong>
+                    <strong>{zh(route.label)}</strong>
                     <small>{route.voltage}</small>
                   </span>
                   <span className="power-destination">
@@ -100,8 +101,7 @@ export default function PowerControls({
           </ul>
           {explanation && <p className="power-explanation">{explanation}</p>}
           <p className="power-note">
-            Colors identify routes. Arrows show direction, not speed or watts.
-            Dashed line: power through the board.
+            颜色区分线路；箭头表示方向，不表示速度或功率。虚线表示经主板供电。
           </p>
         </section>
       )}

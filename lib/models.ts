@@ -146,7 +146,7 @@ const builders: Record<LevelId, (tools: ModelTools, root: T.Group) => void> = {
   xve: (tools, root) => buildArcArchitecture('xve', tools, root),
 };
 
-export function buildModel(level: LevelId): { root: T.Group; pieces: Piece[] } {
+export function buildModel(level: LevelId, options: { preserveAssemblies?: boolean } = {}): { root: T.Group; pieces: Piece[] } {
   const root = new T.Group(),
     pieces: Piece[] = [];
   const materials = new Map<string, T.MeshStandardMaterial>();
@@ -420,7 +420,9 @@ export function buildModel(level: LevelId): { root: T.Group; pieces: Piece[] } {
     return group;
   };
   const assembly: ModelTools['assembly'] = (level) => {
-    const model = buildModel(level);
+    // 课程只需要深入主板的 CPU、内存与 SSD；显卡内部仍按总成合并。
+    const preserve = !!options.preserveAssemblies && level === 'motherboard';
+    const model = buildModel(level, {preserveAssemblies:preserve});
     // Freeze all instances at their assembled positions before handing the
     // model to the parent scale. Only the parent owns picking and animation.
     for (const piece of model.pieces) {
@@ -433,7 +435,8 @@ export function buildModel(level: LevelId): { root: T.Group; pieces: Piece[] } {
         piece.batch.instanceMatrix.needsUpdate = true;
       }
     }
-    model.root.traverse((object) => {
+    if (preserve) model.root.userData.teachingPieces = model.pieces;
+    else model.root.traverse((object) => {
       delete object.userData.piece;
       delete object.userData.pieces;
     });
@@ -449,6 +452,10 @@ export function buildModel(level: LevelId): { root: T.Group; pieces: Piece[] } {
   root.updateMatrixWorld(true);
   for (const child of root.children) {
     if (!(child instanceof T.Group)) continue;
+    // 教学场景保留子装配件的独立姿态，避免跨零件合并网格。
+    let nested = false;
+    if (options.preserveAssemblies) child.traverse(o => { if (o.userData.teachingPieces) nested = true; });
+    if (nested) continue;
     const groups = new Map<T.Material, T.Mesh[]>();
     child.traverse((o) => {
       if (

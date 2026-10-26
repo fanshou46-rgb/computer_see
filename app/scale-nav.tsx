@@ -1,4 +1,5 @@
 'use client';
+import {zh} from '@/lib/chinese';
 import {
   BatteryCharging,
   Box,
@@ -129,12 +130,12 @@ export default function ScaleNav({
     <div className="explore-section">
       <button
         className="mobile-close"
-        aria-label="Close systems"
+        aria-label="关闭部件目录"
         onClick={onClose}
       >
         <X size={17} />
       </button>
-      <nav className="system-picker" aria-label="Choose a system">
+      <nav className="system-picker" aria-label="选择机型">
         {systemRoots.map((root) => {
           const Icon = levelIcon[root];
           return (
@@ -148,9 +149,9 @@ export default function ScaleNav({
               </span>
               <strong>
                 {root === 'pc'
-                  ? 'Desktop PC'
+                  ? "台式机"
                   : root === 'legion'
-                    ? 'Laptops'
+                    ? "笔记本"
                     : 'Mac'}
               </strong>
             </button>
@@ -160,11 +161,11 @@ export default function ScaleNav({
       <button className="compare-button" onClick={onCompare}>
         <GitCompareArrows size={16} />
         <span>
-          <strong>Compare components</strong>
+          <strong>部件对比</strong>
         </span>
         <ChevronRight size={14} />
       </button>
-      <nav className="scale-navigation" aria-label="Exploration scale">
+      <nav className="scale-navigation" aria-label="探索层级">
         <button
           className={level === rootLevel ? 'active' : ''}
           aria-current={level === rootLevel ? 'true' : undefined}
@@ -176,8 +177,8 @@ export default function ScaleNav({
           <span>01</span>
           <RootIcon size={17} />
           <div>
-            {levels[rootLevel].name}
-            <small>{levels[rootLevel].summary}</small>
+            {zh(levels[rootLevel].name)}
+            <small>{zh(levels[rootLevel].summary)}</small>
           </div>
           <ChevronRight size={14} />
         </button>
@@ -196,7 +197,7 @@ export default function ScaleNav({
               >
                 <i />
                 <div>
-                  {levels[id].name}
+                  {zh(levels[id].name)}
                   <small>
                     {levels[id].detailed
                       ? levels[id].summary
@@ -220,11 +221,11 @@ export default function ScaleNav({
                   <span>{String(index + 2).padStart(2, '0')}</span>
                   <Icon size={18} />
                   <div>
-                    {label}
+                    {zh(label)}
                     <small>
                       {submenus.length > 0
-                        ? `${submenus.length} ${label === 'GPU' ? 'cards' : label === 'Memory' ? 'generations' : 'models'} · ${scales.length} scales`
-                        : label === 'Power supply'
+                        ? `${submenus.length} ${label === 'GPU' ? 'cards' : label === "内存" ? 'generations' : 'models'} · ${scales.length} scales`
+                        : label === "电源"
                           ? `${scales.length} models`
                           : `${scales.length} ${scales.length === 1 ? 'scale' : 'scales'} inside`}
                     </small>
@@ -257,7 +258,7 @@ export default function ScaleNav({
                           >
                             <i />
                             <div>
-                              {sub.label}
+                              {zh(sub.label)}
                               <small>
                                 {sub.note ? sub.note + ' · ' : ''}
                                 {sub.levels.length}{' '}

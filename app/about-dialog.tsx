@@ -1,4 +1,5 @@
 'use client';
+import {zh} from '@/lib/chinese';
 import { ArrowUpRight } from 'lucide-react';
 import {
   Dialog,
@@ -15,38 +16,30 @@ export default function AboutDialog({ open, onOpenChange }: Props) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange} modal>
       <DialogContent className="about-dialog">
-        <DialogTitle>From the case down to a compute core.</DialogTitle>
+        <DialogTitle>从机箱一直探索到计算核心。</DialogTitle>
         <DialogDescription>
-          PC Anatomy is a free, interactive 3D computer hardware explorer. Learn
-          how a desktop PC works by inspecting and disassembling its components.
+          本地中文教学扩展基于 PC Anatomy，保留原作者和 MIT 许可证。
+          你可以观察硬件、学习作用与组成，再通过课程完成组装。
         </DialogDescription>
         <p>
-          Start with an assembled ATX tower, take it apart, and keep going: into
-          the motherboard, into the graphics card, and down through the GB202
-          processor to a single streaming multiprocessor. Every scale is a
-          branch you can descend or step back out of.
+          自由探索从整台电脑逐层进入主板、显卡、内存与芯片架构。
+          教学组装使用独立的操作规则，展开模型不会自动完成课程。
         </p>
-        <h3>Two kinds of model.</h3>
+        <h3>实体结构与原理示意</h3>
         <p>
-          <strong>Hardware</strong> is original, approximate mechanical
-          geometry. The ATX board outline, the expansion-slot pitch and the rear
-          I/O aperture follow the published form factor. The RTX 5090, Ryzen 9
-          9950X and Core Ultra 9 285K are named subjects; everything else is a
-          representative example of its component family, not a bill of
-          materials for a particular build.
+          <strong>实体硬件</strong> 展示机械结构和相对位置。部分外形遵循公开规格，
+          内部布局仍含教学性简化。教学笔记本另行建模，不把原有游戏本改名使用。
         </p>
         <p>
-          <strong>Silicon</strong> shows documented logical architecture. Exact
-          transistor-level placement is not publicly available. A full GB202 has
-          192 SMs; the RTX 5090 enables 170. GPC interiors show a representative
-          full cluster, not an invented map of disabled units.
+          <strong>芯片原理图</strong> 解释公开架构中的功能关系，方块的位置和大小不代表
+          制造版图。封装、焊接元件与内部逻辑不属于用户可直接拔下的装机件。
         </p>
-        <h3>Research & credits</h3>
+        <h3>资料与致谢</h3>
         <a className="about-source" href={GUIDE_ACCELERATION}>
-          Browser hardware acceleration setup <ArrowUpRight size={15} />
+          浏览器硬件加速设置 <ArrowUpRight size={15} />
         </a>
         <a className="about-source" href={GUIDE}>
-          PC components: an illustrated beginner’s guide
+          电脑部件中文入门指南
           <ArrowUpRight size={15} />
         </a>
         {Object.entries(sources)
@@ -59,7 +52,7 @@ export default function AboutDialog({ open, onOpenChange }: Props) {
               target="_blank"
               rel="noreferrer"
             >
-              {s.name}
+              {zh(s.name)}
               <ArrowUpRight size={15} />
             </a>
           ))}
@@ -69,7 +62,7 @@ export default function AboutDialog({ open, onOpenChange }: Props) {
           target="_blank"
           rel="noreferrer"
         >
-          Interaction inspiration · Human Atlas
+          交互参考 · Human Atlas
           <ArrowUpRight size={15} />
         </a>
         <a
@@ -78,12 +71,11 @@ export default function AboutDialog({ open, onOpenChange }: Props) {
           target="_blank"
           rel="noreferrer"
         >
-          PC Anatomy source code
+          PC Anatomy 源码
           <ArrowUpRight size={15} />
         </a>
         <p className="about-foot">
-          No affiliation with NVIDIA, AMD or Intel. No third-party model assets.
-          Research reviewed September 2026.
+          原项目独立于 NVIDIA、AMD 与 Intel。模型由代码生成，保留原项目资料来源。
         </p>
       </DialogContent>
     </Dialog>

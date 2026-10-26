@@ -1,4 +1,5 @@
 'use client';
+import {zh} from '@/lib/chinese';
 import { ArrowLeft, ChevronRight, MousePointerClick, X } from 'lucide-react';
 import type { Concept } from '@/lib/manifest';
 import { levelPath, levels, type LevelId } from '@/lib/levels';
@@ -18,8 +19,8 @@ type Props = {
 function hintCopy() {
   return typeof matchMedia !== 'undefined' &&
     matchMedia('(pointer: coarse)').matches
-    ? 'Tap a part to see what it is and take it apart, or press Auto.'
-    : 'Click a part to open it, right-click to inspect it, or press Auto.';
+    ? "轻点查看说明，再进入内部结构，也可以自动拆解。"
+    : "左键进入部件，右键查看说明，也可以自动拆解。";
 }
 
 export default function StageHeading({
@@ -38,18 +39,18 @@ export default function StageHeading({
       <div>
         <h1>
           {explode === 100
-            ? 'Component inventory'
+            ? "零件展开"
             : explode > 0
               ? logical
-                ? 'Resources, separated'
-                : 'Coming apart'
-              : scale.title}
+                ? "资源展开"
+                : "逐步拆解"
+              : `${zh(scale.name)} · 结构探索`}
         </h1>
         {path.length > 1 && (
           <div className="stage-meta">
-            <nav className="breadcrumbs" aria-label="Component hierarchy">
+            <nav className="breadcrumbs" aria-label="部件层级">
               <button
-                aria-label="Back one level"
+                aria-label="返回上一层"
                 onClick={() => onNavigate(path[path.length - 2])}
               >
                 <ArrowLeft size={14} />
@@ -61,14 +62,14 @@ export default function StageHeading({
                     aria-current={id === level ? 'page' : undefined}
                     onClick={() => onNavigate(id)}
                   >
-                    {levels[id].name}
+                    {zh(levels[id].name)}
                   </button>
                 </span>
               ))}
               {selected && selected.shortName !== scale.name && (
                 <span>
                   <ChevronRight size={12} />
-                  <span className="crumb-selected">{selected.shortName}</span>
+                  <span className="crumb-selected">{zh(selected.shortName)}</span>
                 </span>
               )}
             </nav>
@@ -78,7 +79,7 @@ export default function StageHeading({
           <p className="first-visit-hint">
             <MousePointerClick size={15} aria-hidden="true" />
             <span>{hintCopy()}</span>
-            <button aria-label="Dismiss hint" onClick={onDismissHint}>
+            <button aria-label="关闭提示" onClick={onDismissHint}>
               <X size={14} />
             </button>
           </p>

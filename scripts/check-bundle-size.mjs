@@ -16,10 +16,11 @@ import { gzipSync } from 'node:zlib';
 const BUDGET_KB = 220; // gzipped entry chunk; about 185 KB when this was set
 const ENGINE_MARKERS = ['WebGLRenderer', 'BufferGeometry', 'mergeGeometries'];
 
-const dist = path.resolve(import.meta.dirname, '../dist');
+const dist = path.resolve(import.meta.dirname, '..', process.argv[2] ?? 'dist');
+const base = process.argv[3] ?? '/';
 const html = fs.readFileSync(path.join(dist, 'index.html'), 'utf8');
 const entry = html.match(
-  /<script[^>]+type="module"[^>]+src="\/?([^"]+\.js)"/,
+  /<script[^>]+type="module"[^>]+src="([^"]+\.js)"/,
 )?.[1];
 if (!entry) {
   console.error(
@@ -28,7 +29,9 @@ if (!entry) {
   process.exit(1);
 }
 
-const code = fs.readFileSync(path.join(dist, entry));
+if (!entry.startsWith(base))
+  throw new Error(`Entry ${entry} is outside ${base}`);
+const code = fs.readFileSync(path.join(dist, entry.slice(base.length)));
 const gzipKb = gzipSync(code).length / 1024;
 const leaked = ENGINE_MARKERS.filter((marker) => code.includes(marker));
 const failures = [];

@@ -19,7 +19,7 @@ export default function Topbar({
 }: Props) {
   return (
     <header className="topbar">
-      <button className="brand" onClick={onReset} aria-label="Reset PC Anatomy">
+      <button className="brand" onClick={onReset} aria-label="复位探索空间">
         <span className="brand-icon">
           <Cpu size={21} />
         </span>
@@ -30,11 +30,11 @@ export default function Topbar({
         href={REPOSITORY}
         target="_blank"
         rel="noreferrer"
-        title="PC Anatomy on GitHub"
+        title="PC Anatomy 的 GitHub 项目"
       >
         <Code2 size={13} />
         <span className="byline-text">
-          <span className="byline-prefix">Created by </span>
+          <span className="byline-prefix">原作者 </span>
           <strong>Yoseph</strong>
         </span>
       </a>
@@ -42,30 +42,30 @@ export default function Topbar({
         <a
           className="guide-link"
           href={GUIDE}
-          title="Learn about PC components"
+          title="认识电脑部件"
         >
-          Guide
+          硬件指南
         </a>
         <button
           className="mobile-layers"
           onClick={onToggleLayers}
-          aria-label="Toggle systems"
+          aria-label="打开或关闭部件目录"
           aria-expanded={layers}
         >
           <Layers3 size={19} />
         </button>
         <button
           className="search-button"
-          aria-label="Find a component"
+          aria-label="搜索部件"
           onClick={onSearch}
         >
           <Search size={16} />
-          <span>Search components</span>
+          <span>搜索部件</span>
           <kbd>/</kbd>
         </button>
         <button
           className="info-button"
-          aria-label="About and sources"
+          aria-label="关于与来源"
           onClick={onAbout}
         >
           <Info size={19} />

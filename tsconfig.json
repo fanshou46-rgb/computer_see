@@ -35,6 +35,9 @@
   ],
   "exclude": [
     "node_modules",
-    "outputs"
+    "outputs",
+    "deliverables",
+    "dist",
+    "dist-pages"
   ]
 }

@@ -1,4 +1,5 @@
 'use client';
+import {zh} from '@/lib/chinese';
 import { useRef, type RefObject } from 'react';
 import { X } from 'lucide-react';
 import {
@@ -30,7 +31,7 @@ type Pair = readonly [ComparisonItem, ComparisonItem];
 const letters = ['A', 'B'] as const;
 
 function SpecValue({ value }: { value: string | null }) {
-  return value ?? <span className="spec-unlisted">Not listed</span>;
+  return value ?? <span className="spec-unlisted">未列出</span>;
 }
 
 /** Like parts: one row per field label, gaps left visible. */
@@ -42,9 +43,9 @@ function SpecTable({ pair }: { pair: Pair }) {
       <table className="comparison-specs-grid">
         <thead>
           <tr className="spec-row spec-head">
-            <th scope="col">Specification</th>
-            <th scope="col">A · {left.shortName}</th>
-            <th scope="col">B · {right.shortName}</th>
+            <th scope="col">规格</th>
+            <th scope="col">A · {zh(left.shortName)}</th>
+            <th scope="col">B · {zh(right.shortName)}</th>
           </tr>
         </thead>
         <tbody>
@@ -58,7 +59,7 @@ function SpecTable({ pair }: { pair: Pair }) {
                 key={row.id}
                 data-different={different || undefined}
               >
-                <th scope="row">{row.label}</th>
+                <th scope="row">{zh(row.label)}</th>
                 <td>
                   <SpecValue value={row.left} />
                 </td>
@@ -72,7 +73,7 @@ function SpecTable({ pair }: { pair: Pair }) {
       </table>
       {!rows.length && (
         <p className="comparison-specs-note">
-          No specifications listed for these models.
+          目录未列出这些模型的规格。
         </p>
       )}
     </>
@@ -86,22 +87,22 @@ function SpecCards({ pair }: { pair: Pair }) {
       {pair.map((item, index) => (
         <section className="comparison-spec-card" key={item.level}>
           <h3>
-            {letters[index]} · {item.name}
+            {letters[index]} · {zh(item.name)}
           </h3>
           <p>
-            {levels[item.system].name} ·{' '}
-            {item.kind === 'physical' ? 'Hardware' : 'Architecture diagram'}
+            {zh(levels[item.system].name)} ·{' '}
+            {item.kind === 'physical' ? "实体硬件" : "架构图解"}
           </p>
           <dl>
             {item.specs.map((spec) => (
               <div key={spec.id}>
-                <dt>{spec.label}</dt>
+                <dt>{zh(spec.label)}</dt>
                 <dd>{spec.value}</dd>
               </div>
             ))}
           </dl>
           {!item.specs.length && (
-            <p>No specifications listed for this model.</p>
+            <p>目录未列出此模型的规格。</p>
           )}
         </section>
       ))}
@@ -118,14 +119,14 @@ function SourceNotes({ pair }: { pair: Pair }) {
         return (
           <section key={item.level}>
             <h3>
-              {letters[index]} · {item.shortName}
+              {letters[index]} · {zh(item.shortName)}
             </h3>
             <p>{concept.physicalAccuracy}</p>
             <ul>
               {concept.sources.map((id) => (
                 <li key={id}>
                   <a href={sources[id].url} target="_blank" rel="noreferrer">
-                    {sources[id].name}
+                    {zh(sources[id].name)}
                   </a>
                 </li>
               ))}
@@ -158,16 +159,16 @@ export default function ComparisonSpecs({
       >
         <div className="comparison-specs-heading">
           <div>
-            <SheetTitle>Specification comparison</SheetTitle>
+            <SheetTitle>规格对比</SheetTitle>
             <SheetDescription>
               {aligned
-                ? 'Matching fields are aligned. Not listed means the catalogue has no value for that model.'
-                : 'Different kinds of parts, with each model’s own specifications.'}
+                ? "相同字段对齐；未列出表示目录未记录该项参数。"
+                : "不同类别部件，各自显示自身规格。"}
             </SheetDescription>
           </div>
           <button
             ref={closeButton}
-            aria-label="Close specification comparison"
+            aria-label="关闭规格对比"
             onClick={() => onOpenChange(false)}
           >
             <X size={18} />

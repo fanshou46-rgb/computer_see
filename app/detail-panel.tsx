@@ -16,6 +16,7 @@ import {
 import { byId, colors, openLevel, sources, type Concept } from '@/lib/manifest';
 import type { Selection } from '@/lib/explorer-state';
 import { levels, type LevelId } from '@/lib/levels';
+import {zh} from '@/lib/chinese';
 
 type Props = {
   selected: Concept | null;
@@ -61,16 +62,16 @@ export default function DetailPanel({
           <>
             <div className="detail-top">
               <span style={{ color: colors[selected.category] }}>
-                {selected.category} /{' '}
+                {zh(selected.category)} /{' '}
                 {selected.representationType === 'logical'
-                  ? 'ARCHITECTURE'
-                  : 'HARDWARE'}
+                  ? '原理示意'
+                  : '实体结构'}
               </span>
-              <button aria-label="Close component details" onClick={onClose}>
+              <button aria-label="关闭部件详情" onClick={onClose}>
                 <X size={17} />
               </button>
             </div>
-            <SheetTitle>{selected.name}</SheetTitle>
+            <SheetTitle>{zh(selected.name)}</SheetTitle>
             <div className="instance-label">
               {selection?.instance !== undefined
                 ? 'INSTANCE ' + String(selection.instance + 1).padStart(2, '0')
@@ -78,23 +79,24 @@ export default function DetailPanel({
             </div>
             <SheetDescription>{selected.description}</SheetDescription>
             <div className="purpose">
-              <h3>What it does</h3>
+              <h3>作用与功能</h3>
               <p>{selected.purpose}</p>
             </div>
+            {selected.english && <details className="english-reference"><summary>英文原文与详细解说</summary><strong>{zh(selected.english.name)}</strong><p>{selected.english.description}</p><p>{selected.english.purpose}</p></details>}
             <div className="quantity">{selected.quantity}</div>
             <dl>
               {Object.entries(selected.specifications).map(([k, v]) => (
                 <div key={k}>
-                  <dt>{k}</dt>
+                  <dt>{zh(k)}</dt>
                   <dd>{v}</dd>
                 </div>
               ))}
             </dl>
             {selected.parent && (
               <div className="parent-link">
-                Part of{' '}
+                所属部件{' '}
                 <button onClick={() => onSelectConcept(selected.parent!)}>
-                  {byId[selected.parent].shortName}
+                  {zh(byId[selected.parent].shortName)}
                   <ChevronRight size={12} />
                 </button>
               </div>
@@ -104,31 +106,30 @@ export default function DetailPanel({
                 className="open-component"
                 onClick={() => onDive(selected.id)}
               >
-                Take apart {levels[opens].name}
+                继续拆解 {zh(levels[opens].name)}
                 <ChevronRight size={17} />
               </button>
             )}
             <div className="detail-actions">
               <button onClick={onIsolate}>
                 <Focus size={14} />
-                {isolated ? 'Show context' : 'Isolate'}
+                {isolated ? "恢复周围部件" : "单独查看"}
               </button>
               <button onClick={onFocus}>
                 <Maximize size={14} />
-                Focus
+                聚焦
               </button>
               <button onClick={() => onHide(selected.id)}>
                 <EyeOff size={14} />
-                Hide
+                隐藏
               </button>
             </div>
             <p className="accuracy">{selected.physicalAccuracy}</p>
             {selected.sources.length > 0 && (
               <div className="source-links">
-                <h3>References & architecture</h3>
+                <h3>资料与架构来源</h3>
                 <p>
-                  Manufacturer documents and standards explain this component
-                  family. Illustrative geometry is not a product schematic.
+                  制造商资料与标准解释部件原理；示意模型不是产品工程图。
                 </p>
                 {selected.sources.map((s) => (
                   <a
@@ -137,7 +138,7 @@ export default function DetailPanel({
                     target="_blank"
                     rel="noreferrer"
                   >
-                    {sources[s].name}
+                    {zh(sources[s].name)}
                     <ArrowUpRight size={12} />
                   </a>
                 ))}

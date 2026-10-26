@@ -1,4 +1,5 @@
 'use client';
+import {zh} from '@/lib/chinese';
 import { useCallback, useMemo, useRef, useState, type RefObject } from 'react';
 import {
   ArrowLeftRight,
@@ -35,15 +36,15 @@ import './comparison.css';
 type Props = { initialLevel: ComparisonLevel; onExit: () => void };
 
 function framingNote(framing: ComparisonFraming, trueSizeAvailable: boolean) {
-  if (framing === 'scale') return 'Same physical scale in both panes.';
+  if (framing === 'scale') return "两侧使用相同物理比例。";
   return trueSizeAvailable
-    ? 'Each model fits its pane. Sizes are not relative.'
-    : 'Each model fits its pane. Diagrams and illustrative parts have no physical scale.';
+    ? "分别适配视口，大小不可直接比较。"
+    : "分别适配视口；原理图不表示物理比例。";
 }
 
 function disassemblyTitle(left: ComparisonItem, right: ComparisonItem) {
-  if (left.kind !== right.kind) return 'Explore both';
-  return left.kind === 'logical' ? 'Expand both' : 'Disassemble both';
+  if (left.kind !== right.kind) return "探索两侧";
+  return left.kind === 'logical' ? "同时展开" : "同时拆解";
 }
 
 type PartSelectorProps = {
@@ -65,7 +66,7 @@ function PartSelector({ side, item, buttonRef, onOpen }: PartSelectorProps) {
     >
       <span className="comparison-letter">{sideLetter(side)}</span>
       <span className="comparison-selected-part">
-        <strong>{item.shortName}</strong>
+        <strong>{zh(item.shortName)}</strong>
       </span>
       <ChevronDown size={17} aria-hidden="true" />
     </button>
@@ -143,45 +144,45 @@ export default function ComparisonWorkbench({ initialLevel, onExit }: Props) {
           <button
             ref={specsButton}
             className="comparison-specs-button"
-            aria-label="Specs"
+            aria-label="规格"
             onClick={() =>
               setState((current) => setComparisonSpecsOpen(current, true))
             }
           >
             <BarChart3 size={16} />
-            <span>Specs</span>
+            <span>规格</span>
           </button>
           <button
             className="comparison-exit"
             onClick={onExit}
-            aria-label="Back to explorer"
+            aria-label="返回探索"
           >
             <ChevronLeft size={17} />
-            <span>Back to explorer</span>
+            <span>返回探索</span>
           </button>
         </div>
       </header>
-      <section className="comparison-setup" aria-label="Comparison pair">
+      <section className="comparison-setup" aria-label="对比组合">
         <div className="comparison-pair">
           {selector('left')}
           <button
             className="comparison-swap"
             onClick={() => setState(swapComparisonSides)}
-            aria-label="Swap comparison sides"
+            aria-label="交换对比位置"
           >
             <ArrowLeftRight size={18} />
           </button>
           {selector('right')}
         </div>
         <div className="comparison-framing">
-          <fieldset aria-label="Model scale">
+          <fieldset aria-label="模型比例">
             <button
               aria-pressed={state.framing === 'fit'}
               onClick={() =>
                 setState((current) => setComparisonFraming(current, 'fit'))
               }
             >
-              Fit each
+              分别适配
             </button>
             <button
               aria-pressed={state.framing === 'scale'}
@@ -191,7 +192,7 @@ export default function ComparisonWorkbench({ initialLevel, onExit }: Props) {
                 setState((current) => setComparisonFraming(current, 'scale'))
               }
             >
-              True size
+              真实比例
             </button>
           </fieldset>
           <p id="comparison-scale-note">
@@ -201,7 +202,7 @@ export default function ComparisonWorkbench({ initialLevel, onExit }: Props) {
       </section>
       <fieldset
         className="comparison-mobile-switch"
-        aria-label="Visible comparison side"
+        aria-label="当前显示的对比侧"
       >
         {(['left', 'right'] as const).map((side) => (
           <button
@@ -218,7 +219,7 @@ export default function ComparisonWorkbench({ initialLevel, onExit }: Props) {
       <div className="comparison-divider" aria-hidden="true" />
       <ComparisonViewer key={viewerRevision} state={viewerState} />
       <div className="sr-only" aria-live="polite">
-        Comparing {leftItem.name} with {rightItem.name}.
+        正在对比 {zh(leftItem.name)} 包含 {zh(rightItem.name)}.
       </div>
       <Disassembly
         level={state.left}
@@ -228,9 +229,9 @@ export default function ComparisonWorkbench({ initialLevel, onExit }: Props) {
         onToggleAuto={toggleAuto}
         onSetExplode={setExplode}
         onReset={reset}
-        sectionLabel="Shared disassembly control"
+        sectionLabel="共用拆解控制"
         title={disassemblyTitle(leftItem, rightItem)}
-        sliderLabel="Disassemble or expand both models"
+        sliderLabel="拆解或展开两个模型"
         valueText={`${Math.round(state.explode)} percent for both models`}
       />
       <ComparisonSpecs

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { categories, colors, manifest, type Category } from '@/lib/manifest';
+import {zh} from '@/lib/chinese';
 
 type Props = {
   level: LevelId;
@@ -34,9 +35,9 @@ export default function SystemsList({
   return (
     <div className="systems-section">
       <div className="section-heading">
-        VISIBLE SYSTEMS{' '}
+        显示的系统{' '}
         <button onClick={onToggleAll}>
-          {visible.length === categories.length ? 'Hide all' : 'Show all'}
+          {visible.length === categories.length ? "全部隐藏" : "全部显示"}
         </button>
       </div>
       <div className="layer-scroll">
@@ -47,12 +48,12 @@ export default function SystemsList({
                 className="category-visibility"
                 aria-pressed={visible.includes(category)}
                 aria-label={
-                  (visible.includes(category) ? 'Hide ' : 'Show ') + category
+                  (visible.includes(category) ? "隐藏" : "显示") + category
                 }
                 onClick={() => onToggleCategory(category)}
               >
                 <i style={{ background: colors[category] }} />
-                <span>{category}</span>
+                <span>{zh(category)}</span>
                 <small>{visible.includes(category) ? 'On' : 'Off'}</small>
               </button>
               <button
@@ -62,7 +63,7 @@ export default function SystemsList({
                 }
                 aria-expanded={expanded === category}
                 aria-label={
-                  (expanded === category ? 'Hide ' : 'Show ') +
+                  (expanded === category ? "隐藏" : "显示") +
                   category +
                   ' components'
                 }
@@ -82,7 +83,7 @@ export default function SystemsList({
                   .map((c) => (
                     <div key={c.id}>
                       <button onClick={() => onSelectConcept(c.id)}>
-                        {c.shortName}
+                        {zh(c.shortName)}
                       </button>
                       <Switch
                         size="sm"
@@ -94,8 +95,8 @@ export default function SystemsList({
                         }
                         aria-label={
                           (visible.includes(category) && !hidden.includes(c.id)
-                            ? 'Hide '
-                            : 'Show ') + c.name
+                            ? "隐藏"
+                            : "显示") + c.name
                         }
                       />
                     </div>

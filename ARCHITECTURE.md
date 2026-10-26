@@ -701,6 +701,33 @@ render the old and new trees and diff the markup: transpile with TypeScript's
 part count, mount both into jsdom, drive the same script of clicks through
 `act`, and compare `document.body.innerHTML` at each step.
 
+## Local Chinese learning extension · 0.1.1
+
+The default entry now mounts `app/learning-app.tsx`: ten Chinese chapters,
+chapter games, and independent desktop/notebook assembly challenges. The
+original explorer remains in `app/page.tsx` and is loaded only when requested.
+The learning renderer and the explorer never remain mounted together.
+
+`lib/learning-rules.ts` is the pure action validator; installed, fastened,
+latched and connected are separate states. `lib/learning-courses.ts` defines
+the course and `lib/learning-progress.ts` validates browser-local saves.
+`lib/learning-scene.ts` reuses the desktop builders and creates a separate
+Latitude 5440 reference teaching notebook. It does not relabel Legion geometry.
+`buildModel` accepts optional `preserveAssemblies` (false by default); the
+learning view retains motherboard child assemblies for independent manipulation.
+
+`Concept.english` preserves original names and explanations, while
+`lib/chinese.ts` supplies Chinese terminology and educational explanations.
+Original English names stay in search terms. Level ids and branch-label keys
+remain unchanged; navigation labels are translated only when rendered.
+
+The eleven additional rule/persistence/geometry tests bring the suite to 145 tests.
+`scripts/learning-smoke.mjs` completes the ten chapters through the public UI,
+including a real mouse drag; `scripts/learning-performance.mjs` records browser
+process memory and resource counts over twenty machine switches. Production
+files run without runtime npm dependencies through `scripts/serve-local.mjs`.
+See [the Chinese extension notes](docs/中文教学扩展.md) and [usage](使用说明.md).
+
 ## Keeping this file honest
 
 This document is only useful while it is true. When you change the scale tree,

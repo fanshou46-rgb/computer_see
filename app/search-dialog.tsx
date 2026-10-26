@@ -1,4 +1,5 @@
 'use client';
+import {zh} from '@/lib/chinese';
 import { ArrowUpRight } from 'lucide-react';
 import {
   Dialog,
@@ -47,22 +48,22 @@ export default function SearchDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange} modal>
       <DialogContent className="search-dialog">
-        <DialogTitle>Find a component</DialogTitle>
+        <DialogTitle>搜索部件</DialogTitle>
         <DialogDescription>
-          Jump to any hardware or architecture resource.
+          搜索硬件或架构，进入对应层级。
         </DialogDescription>
         <Command shouldFilter={false}>
           <CommandInput
             value={query}
             onValueChange={onQueryChange}
-            placeholder="Try Tensor, GDDR7, L2 or SM…"
+            placeholder="试试“内存”“张量核心”“L2”或“SM”…"
           />
           <CommandList>
             <CommandEmpty>
-              No matching components. Try “memory” or “CUDA”.
+              未找到部件，可以试试“内存”或“CUDA”。
             </CommandEmpty>
             <CommandGroup
-              heading={query ? 'Matching structures' : 'Explore the specimen'}
+              heading={query ? "相同结构" : "探索当前部件"}
             >
               {(query
                 ? searchConcepts(query)
@@ -75,13 +76,13 @@ export default function SearchDialog({
                 >
                   <i style={{ background: colors[c.category] }} />
                   <div>
-                    {c.name}
+                    {zh(c.name)}
                     <small>
-                      <span>{levels[c.level].name}</span>
-                      {c.category} ·{' '}
+                      <span>{zh(levels[c.level].name)}</span>
+                      {zh(c.category)} ·{' '}
                       {c.representationType === 'logical'
-                        ? 'Logical architecture'
-                        : 'Physical hardware'}
+                        ? "逻辑架构"
+                        : "实体硬件"}
                     </small>
                   </div>
                   <ArrowUpRight size={15} />
@@ -91,7 +92,7 @@ export default function SearchDialog({
           </CommandList>
         </Command>
         <div className="search-hint">
-          ↑ ↓ to browse <span>Enter to inspect</span>
+          ↑ ↓ 浏览 <span>回车查看</span>
         </div>
       </DialogContent>
     </Dialog>

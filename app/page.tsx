@@ -113,13 +113,13 @@ export default function Home() {
         // dismiss it lands in the scene and selects whatever was behind it.
         <button
           className="drawer-scrim"
-          aria-label="Close systems"
+          aria-label="关闭部件目录"
           onClick={() => explorer.setLayers(false)}
         />
       )}
       <aside
         className={'explorer' + (layers ? ' mobile-open' : '')}
-        aria-label="System visibility"
+        aria-label="部件显隐"
       >
         <ScaleNav
           level={state.level}
@@ -160,8 +160,8 @@ export default function Home() {
       {count === 0 && (
         <div className="empty-scene">
           <EyeOff size={27} />
-          <h3>No structures visible</h3>
-          <button onClick={explorer.showEverything}>Show all systems</button>
+          <h3>所有结构已隐藏</h3>
+          <button onClick={explorer.showEverything}>显示全部系统</button>
         </div>
       )}
       <StageTools

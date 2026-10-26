@@ -1,5 +1,11 @@
 # PC Anatomy
 
+> **中文教学扩展 · 0.1.2**：[在线打开电脑构造实验室](https://fanshou46-rgb.github.io/computer_see/)，或从“启动电脑实验室.cmd”本地打开。
+> 包含十章课程、部件百科、台式机与笔记本组装小游戏，以及原项目自由探索。
+> 阅读 [中文使用说明](使用说明.md)、[版本记录](CHANGELOG.zh-CN.md) 和
+> [扩展架构](docs/中文教学扩展.md) 和 [GitHub 部署说明](GitHub部署说明.md)。
+> 本仓库通过 GitHub Actions 自动发布；在线构建为 `dist-pages/`，本地构建为 `dist/`。以下保留上游项目介绍与来源，其中原站域名与上游部署说明属于原项目。
+
 PC Anatomy is an open-source 3D explorer that takes a desktop computer apart from the assembled ATX tower down to a single GPU streaming multiprocessor — and a DDR5 memory module down to the transistor and capacitor that hold one bit.
 
 ## [**Explore the live demo →**](https://pc-anatomy.com/)
